@@ -1,6 +1,6 @@
 /* eslint-disable */
 import React, { useState } from "react";
-import { NavLink, useLocation } from "react-router-dom";
+import { NavLink, useLocation, useNavigate } from "react-router-dom";
 // chakra imports
 import {
   Box,
@@ -11,11 +11,12 @@ import {
   Collapse,
   Icon,
 } from "@chakra-ui/react";
-import { ChevronDownIcon, ChevronRightIcon } from "@chakra-ui/icons";
 import DropdownMenu from "./DropdownMenu ";
+
 export function SidebarLinks(props) {
   // Chakra color mode
   let location = useLocation();
+  const navigate = useNavigate(); // Hook for navigation
 
   // Change colors as per your preference
   let activeColor = useColorModeValue("#fffffff", "#F7FAFC"); // Active route color (light/dark mode)
@@ -23,12 +24,21 @@ export function SidebarLinks(props) {
   let activeIcon = useColorModeValue("#ffffff", "#F7FAFC"); // Active icon color (light/dark mode)
   let textColor = useColorModeValue("#a9b6e3", "#a9b6e3"); // Text color (light/dark mode)
   let brandColor = useColorModeValue("#3182CE", "#2B6CB0"); // Brand color (light/dark mode)
-  
+
   const { routes } = props;
 
   // verifies if routeName is the one active (in browser input)
   const activeRoute = (routeName) => {
     return routeName && location.pathname.includes(routeName);
+  };
+
+  // Handle logout
+  const handleLogout = () => {
+    // Clear user session or token (example: remove token from localStorage)
+    localStorage.removeItem("token"); // Adjust this based on your authentication logic
+
+    // Redirect to the login page
+    navigate("/admin/auth/sign-in"); // Adjust the path to your login route
   };
 
   // DropdownMenu component for subRoutes
@@ -64,9 +74,31 @@ export function SidebarLinks(props) {
         route.layout === "/auth" ||
         route.layout === "/rtl"
       ) {
+        // Handle logout route separately
+        if (route.path === "/logout") {
+          return (
+            <Box
+              key={index}
+              onClick={handleLogout}
+              cursor="pointer"
+            >
+              <HStack spacing="26px" py="5px" ps="10px">
+                <Flex w="100%" alignItems="center" justifyContent="center">
+                  <Box color={textColor} me="18px">
+                    {route.icon}
+                  </Box>
+                  <Text me="auto" color={textColor} fontWeight="normal">
+                    {route.name}
+                  </Text>
+                </Flex>
+                <Box h="36px" w="4px" bg="transparent" borderRadius="5px" />
+              </HStack>
+            </Box>
+          );
+        }
+
         return (
-          <NavLink key={index} to={route.layout + route.path} 
-          >
+          <NavLink key={index} to={route.layout + route.path}>
             {route.icon ? (
               <Box>
                 <HStack

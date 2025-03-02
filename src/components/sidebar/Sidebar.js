@@ -22,9 +22,11 @@ import {
 import { Scrollbars } from "react-custom-scrollbars-2";
 import PropTypes from "prop-types";
 import { IoMenuOutline } from "react-icons/io5";
+import { useNavigate } from "react-router-dom"; // Import useNavigate for programmatic navigation
 
 function Sidebar(props) {
   const { routes } = props;
+  const navigate = useNavigate(); // Hook for navigation
 
   let variantChange = "0.2s linear";
   let shadow = useColorModeValue(
@@ -44,7 +46,21 @@ function Sidebar(props) {
   };
 
   // Filter routes to only show those with showInSidebar: true
-  const filteredRoutes = routes.filter(route => route.showInSidebar);
+  const filteredRoutes = routes
+    .filter((route) => route.showInSidebar)
+    .map((route) => {
+      // Add the navigate function to the logout route
+      if (route.name === "Logout") {
+        return {
+          ...route,
+          onClick: () => {
+            localStorage.removeItem("token"); // Remove token
+            navigate("/admin/auth/sign-in"); // Redirect to login page
+          },
+        };
+      }
+      return route;
+    });
 
   return (
     <Box display={{ sm: "none", xl: "block" }} w="100%" position="fixed" minH="100%">
@@ -64,7 +80,11 @@ function Sidebar(props) {
           renderThumbVertical={renderThumb}
           renderView={renderView}
         >
-          <Content routes={filteredRoutes} openDropdown={openDropdown} toggleDropdown={toggleDropdown} />
+          <Content
+            routes={filteredRoutes}
+            openDropdown={openDropdown}
+            toggleDropdown={toggleDropdown}
+          />
         </Scrollbars>
       </Box>
     </Box>
@@ -77,9 +97,24 @@ export function SidebarResponsive(props) {
   const { isOpen, onOpen, onClose } = useDisclosure();
   const btnRef = React.useRef();
   const { routes } = props;
+  const navigate = useNavigate(); // Hook for navigation
 
   // Filter routes to only show those with showInSidebar: true
-  const filteredRoutes = routes.filter(route => route.showInSidebar);
+  const filteredRoutes = routes
+    .filter((route) => route.showInSidebar)
+    .map((route) => {
+      // Add the navigate function to the logout route
+      if (route.path === "/logout") {
+        return {
+          ...route,
+          onClick: () => {
+            localStorage.removeItem("token"); // Remove token
+            navigate("/admin/auth/sign-in"); // Redirect to login page
+          },
+        };
+      }
+      return route;
+    });
 
   return (
     <Flex display={{ sm: "flex", xl: "none" }} alignItems="center">
