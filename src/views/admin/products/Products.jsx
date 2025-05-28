@@ -1,250 +1,448 @@
 import React, { useState } from "react";
 import {
-Box,
-Flex,
-Icon,
-Table,
-Tbody,
-Td,
-Text,
-Th,
-Thead,
-Tr,
-useColorModeValue,
-Switch,
-Button,
+  Box,
+  Flex,
+  Icon,
+  Table,
+  Tbody,
+  Td,
+  Text,
+  Th,
+  Thead,
+  Tr,
+  useColorModeValue,
+  Switch,
+  Button,
+  useToast,
+  Skeleton,
+  Input,
+  InputGroup,
+  InputLeftElement,
+  Menu,
+  MenuButton,
+  MenuList,
+  MenuItem,
+  IconButton,
+  Card
 } from "@chakra-ui/react";
 import {
-createColumnHelper,
-flexRender,
-getCoreRowModel,
-getSortedRowModel,
-useReactTable,
+  createColumnHelper,
+  flexRender,
+  getCoreRowModel,
+  getSortedRowModel,
+  useReactTable,
+  getFilteredRowModel,
 } from "@tanstack/react-table";
-import { FaEye, FaTrash } from "react-icons/fa6";
-import { EditIcon, PlusSquareIcon } from "@chakra-ui/icons";
-import Card from "components/card/Card";
+import { FaEye, FaTrash, FaFileExport, FaFileImport, FaDownload, FaUpload } from "react-icons/fa6";
+import { EditIcon, PlusSquareIcon, ChevronDownIcon } from "@chakra-ui/icons";
+import {FaSearch} from 'react-icons/fa';
 import { useNavigate } from "react-router-dom";
+import { useGetProductsQuery, useDeleteProductMutation, useUpdateProductMutation } from "api/productSlice";
+import Swal from "sweetalert2";
+import Pagination from "theme/components/Pagination";
+import * as XLSX from 'xlsx';
 
 const columnHelper = createColumnHelper();
 
 const Products = () => {
-const navigate = useNavigate();
-const [data, setData] = useState([
-{
-    id: 1,
-    name: "Product 1",
-    category: "Electronics",
-    price: 100,
-    discountPrice: 80,
-    stock: 50,
-    status: "Active",
-    publish: true,
-},
-{
-    id: 2,
-    name: "Product 2",
-    category: "Clothing",
-    price: 50,
-    discountPrice: 40,
-    stock: 100,
-    status: "Inactive",
-    publish: false,
-},
-{
-    id: 3,
-    name: "Product 3",
-    category: "Home & Kitchen",
-    price: 200,
-    discountPrice: 180,
-    stock: 20,
-    status: "Active",
-    publish: true,
-},
-]);
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(10);
+  const [globalFilter, setGlobalFilter] = useState('');
+  const { data: productsResponse, isLoading, isFetching, refetch } = useGetProductsQuery({ page, limit,pharmacyId: JSON.parse(localStorage.getItem('pharmacy')).id });
+  const [deleteProduct] = useDeleteProductMutation();
+  const [updateProduct] = useUpdateProductMutation();
+  const navigate = useNavigate();
+  const toast = useToast();
 
-const textColor = useColorModeValue("secondaryGray.900", "white");
-const borderColor = useColorModeValue("gray.200", "whiteAlpha.100");
+  const textColor = useColorModeValue("secondaryGray.900", "white");
+  const borderColor = useColorModeValue("gray.200", "whiteAlpha.100");
 
-// Function to toggle status
-const toggleStatus = (id) => {
-setData((prevData) =>
-    prevData.map((product) =>
-    product.id === id
-        ? { ...product, status: product.status === "Active" ? "Inactive" : "Active" }
-        : product
-    )
-);
-};
+  // Extract products and pagination data from response
+  const products = productsResponse?.data || [];
+  const pagination = productsResponse?.pagination || {
+    page: 1,
+    limit: 10,
+    totalItems: 0,
+    totalPages: 1
+  };
 
-// Function to toggle publish
-const togglePublish = (id) => {
-setData((prevData) =>
-    prevData.map((product) =>
-    product.id === id ? { ...product, publish: !product.publish } : product
-    )
-);
-};
+  // Trigger refetch when component mounts (navigates to)
+  React.useEffect(() => {
+    if (!isLoading) {
+      refetch();
+    }
+  }, [refetch, isLoading]);
 
-// Function to handle delete
-const handleDelete = (id) => {
-setData((prevData) => prevData.filter((product) => product.id !== id));
-};
+  const toggleStatus = async (productId, currentStatus) => {
+    // try {
+    //   await updateProduct({
+    //     id: productId,
+    //     isActive: !currentStatus
+    //   }).unwrap();
+      
+    //   toast({
+    //     title: "Success",
+    //     description: "Product status updated successfully",
+    //     status: "success",
+    //     duration: 3000,
+    //     isClosable: true,
+    //   });
+    // } catch (err) {
+    //   toast({
+    //     title: "Error",
+    //     description: err.data?.message || "Failed to update product status",
+    //     status: "error",
+    //     duration: 5000,
+    //     isClosable: true,
+    //   });
+    // }
+  };
 
-const columns = [
-columnHelper.accessor("id", {
-    id: "id",
-    header: () => <Text color="gray.400">Product ID</Text>,
-    cell: (info) => <Text color={textColor}>{info.getValue()}</Text>,
-}),
-columnHelper.accessor("name", {
-    id: "name",
-    header: () => <Text color="gray.400">Product Name</Text>,
-    cell: (info) => <Text color={textColor}>{info.getValue()}</Text>,
-}),
-columnHelper.accessor("category", {
-    id: "category",
-    header: () => <Text color="gray.400">Category</Text>,
-    cell: (info) => <Text color={textColor}>{info.getValue()}</Text>,
-}),
-columnHelper.accessor("price", {
-    id: "price",
-    header: () => <Text color="gray.400">Price</Text>,
-    cell: (info) => <Text color={textColor}>${info.getValue()}</Text>,
-}),
-columnHelper.accessor("discountPrice", {
-    id: "discountPrice",
-    header: () => <Text color="gray.400">Discount Price</Text>,
-    cell: (info) => <Text color={textColor}>${info.getValue()}</Text>,
-}),
-columnHelper.accessor("stock", {
-    id: "stock",
-    header: () => <Text color="gray.400">Stock</Text>,
-    cell: (info) => <Text color={textColor}>{info.getValue()}</Text>,
-}),
-columnHelper.accessor("status", {
-    id: "status",
-    header: () => <Text color="gray.400">Status</Text>,
-    cell: (info) => {
-    const isActive = info.getValue() === "Active";
-    return (
+  const togglePublish = async (productId, currentPublished) => {
+    // try {
+    //   await updateProduct({
+    //     id: productId,
+    //     isPublished: !currentPublished
+    //   }).unwrap();
+      
+    //   toast({
+    //     title: "Success",
+    //     description: "Product publish status updated successfully",
+    //     status: "success",
+    //     duration: 3000,
+    //     isClosable: true,
+    //   });
+    // } catch (err) {
+    //   toast({
+    //     title: "Error",
+    //     description: err.data?.message || "Failed to update product publish status",
+    //     status: "error",
+    //     duration: 5000,
+    //     isClosable: true,
+    //   });
+    // }
+  };
+
+  const handleDelete = async (productId) => {
+     Swal.fire({
+      title: "Are you sure?",
+      text: "You won't be able to revert this!",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#3085d6",
+      cancelButtonColor: "#d33",
+      confirmButtonText: "Yes, delete it!"
+    }).then(async (result) => {
+
+    if (result.isConfirmed) {
+      try {
+        await deleteProduct(productId).unwrap();
+        refetch();
+        toast({
+          title: "Deleted!",
+          description: "Product has been deleted.",
+          status: "success",
+          duration: 3000,
+          isClosable: true,
+        });
+      } catch (err) {
+        toast({
+          title: "Error",
+          description: err.data?.message || "Failed to delete product",
+          status: "error",
+          duration: 5000,
+          isClosable: true,
+        });
+      }
+    }
+  });
+  };
+
+  // Export to Excel function
+  const exportToExcel = () => {
+    const data = products.map(product => ({
+      Name: product.name,
+      Category: product.categoryName,
+      Price: product.price,
+      Stock: product.quantity,
+      Status: product.isActive ? 'Active' : 'Inactive',
+      Published: product.isPublished ? 'Yes' : 'No'
+    }));
+
+    const worksheet = XLSX.utils.json_to_sheet(data);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Products");
+    XLSX.writeFile(workbook, "Products.xlsx");
+    
+    toast({
+      title: "Export Successful",
+      description: "Products data has been exported to Excel",
+      status: "success",
+      duration: 3000,
+      isClosable: true,
+    });
+  };
+
+  // Import from Excel function
+  const handleFileImport = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const data = new Uint8Array(e.target.result);
+      const workbook = XLSX.read(data, { type: 'array' });
+      const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+      const jsonData = XLSX.utils.sheet_to_json(worksheet);
+      
+      // Here you would typically send the data to your API
+      console.log("Imported data:", jsonData);
+      
+      toast({
+        title: "Import Successful",
+        description: `${jsonData.length} products imported from file`,
+        status: "success",
+        duration: 3000,
+        isClosable: true,
+      });
+    };
+    reader.readAsArrayBuffer(file);
+  };
+
+  const columns = [
+    columnHelper.accessor("name", {
+      id: "name",
+      header: () => <Text color="gray.400">Product Name</Text>,
+      cell: (info) => <Text color={textColor}>{info.getValue()}</Text>,
+    }),
+    columnHelper.accessor("categoryName", {
+      id: "category",
+      header: () => <Text color="gray.400">Category</Text>,
+      cell: (info) => <Text color={textColor}>{info.getValue()}</Text>,
+    }),
+    columnHelper.accessor("price", {
+      id: "price",
+      header: () => <Text color="gray.400">Price</Text>,
+      cell: (info) => <Text color={textColor}>${info.getValue()}</Text>,
+    }),
+    columnHelper.accessor("quantity", {
+      id: "quantity",
+      header: () => <Text color="gray.400">Stock</Text>,
+      cell: (info) => <Text color={textColor}>{info.getValue()}</Text>,
+    }),
+    columnHelper.accessor("isActive", {
+      id: "status",
+      header: () => <Text color="gray.400">Status</Text>,
+      cell: (info) => (
         <Switch
-        colorScheme="green"
-        isChecked={isActive}
-        onChange={() => toggleStatus(info.row.original.id)}
+          colorScheme="green"
+          isChecked={info.getValue()}
+          onChange={() => toggleStatus(info.row.original.id, info.getValue())}
+          isDisabled={isFetching}
         />
-    );
-    },
-}),
-columnHelper.accessor("publish", {
-    id: "publish",
-    header: () => <Text color="gray.400">Publish</Text>,
-    cell: (info) => {
-    const isPublished = info.getValue();
-    return (
+      ),
+    }),
+    columnHelper.accessor("isPublished", {
+      id: "publish",
+      header: () => <Text color="gray.400">Publish</Text>,
+      cell: (info) => (
         <Switch
-        colorScheme="blue"
-        isChecked={isPublished}
-        onChange={() => togglePublish(info.row.original.id)}
+          colorScheme="blue"
+          isChecked={info.getValue()}
+          onChange={() => togglePublish(info.row.original.id, info.getValue())}
+          isDisabled={isFetching}
         />
-    );
+      ),
+    }),
+    columnHelper.accessor("actions", {
+      id: "actions",
+      header: () => <Text color="gray.400">Actions</Text>,
+      cell: (info) => (
+        <Flex>
+          <Icon
+            w="18px"
+            h="18px"
+            me="10px"
+            color="blue.500"
+            as={FaEye}
+            cursor="pointer"
+            onClick={() => navigate(`/admin/products/${info.row.original.id}`)}
+          />
+          <Icon
+            w="18px"
+            h="18px"
+            me="10px"
+            color="green.500"
+            as={EditIcon}
+            cursor="pointer"
+            onClick={() => navigate(`/admin/edit-product/${info.row.original.id}`)}
+          />
+          <Icon
+            w="18px"
+            h="18px"
+            me="10px"
+            color="red.500"
+            as={FaTrash}
+            cursor="pointer"
+            onClick={() => handleDelete(info.row.original.id)}
+          />
+        </Flex>
+      ),
+    }),
+  ];
+
+  const table = useReactTable({
+    data: products,
+    columns,
+    state: {
+      globalFilter,
     },
-}),
-columnHelper.accessor("actions", {
-    id: "actions",
-    header: () => <Text color="gray.400">Actions</Text>,
-    cell: (info) => (
-    <Flex>
-        <Icon
-        w="18px"
-        h="18px"
-        me="10px"
-        color="blue.500"
-        as={FaEye}
-        cursor="pointer"
-        onClick={() => navigate(`/admin/products/${info.row.original.id}`)}
-        />
-        <Icon
-        w="18px"
-        h="18px"
-        me="10px"
-        color="green.500"
-        as={EditIcon}
-        cursor="pointer"
-        onClick={() => navigate(`/admin/edit-product/${info.row.original.id}`)}
-        />
-        <Icon
-        w="18px"
-        h="18px"
-        me="10px"
-        color="red.500"
-        as={FaTrash}
-        cursor="pointer"
-        onClick={() => handleDelete(info.row.original.id)}
-        />
-    </Flex>
-    ),
-}),
-];
+    onGlobalFilterChange: setGlobalFilter,
+    getCoreRowModel: getCoreRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+    getFilteredRowModel: getFilteredRowModel(),
+    globalFilterFn: 'includesString',
+  });
 
-const table = useReactTable({
-data,
-columns,
-getCoreRowModel: getCoreRowModel(),
-getSortedRowModel: getSortedRowModel(),
-});
-
-return (
-<div className="container">
-    <Card flexDirection="column" w="100%" px="0px" overflowX="auto">
-    <Flex px="25px" mb="8px" justifyContent="space-between" align="center">
-        <Text color={textColor} fontSize="22px" fontWeight="700">
-        Products
-        </Text>
-        <Button
-        variant="darkBrand"
-        color="white"
-        fontSize="sm"
-        fontWeight="500"
-        borderRadius="70px"
-        px="24px"
-        py="5px"
-        onClick={() => navigate("/admin/add-product")}
-        width={"200px"}
-        >
-        <PlusSquareIcon me="10px" />
-        Add Product
-        </Button>
-    </Flex>
-    <Box>
-        <Table variant="simple" color="gray.500" mb="24px" mt="12px">
-        <Thead>
-            {table.getHeaderGroups().map((headerGroup) => (
-            <Tr key={headerGroup.id}>
-                {headerGroup.headers.map((header) => (
-                <Th key={header.id} borderColor={borderColor}>
-                    {flexRender(header.column.columnDef.header, header.getContext())}
-                </Th>
-                ))}
-            </Tr>
-            ))}
-        </Thead>
-        <Tbody>
-            {table.getRowModel().rows.map((row) => (
-            <Tr key={row.id}>
-                {row.getVisibleCells().map((cell) => (
-                <Td key={cell.id} borderColor="transparent">
-                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                </Td>
-                ))}
-            </Tr>
-            ))}
-        </Tbody>
-        </Table>
-    </Box>
-    </Card>
-</div>
-);
+  return (
+    <div className="container">
+      <Card flexDirection="column" w="100%" pt={"20px"} px="0px" overflowX="auto">
+        <Flex px="25px" mb="8px" justifyContent="space-between" align="center">
+          <Text color={textColor} fontSize="22px" fontWeight="700">
+            Products
+          </Text>
+          <Flex>
+            <Button
+              variant="darkBrand"
+              color="white"
+              fontSize="sm"
+              fontWeight="500"
+              borderRadius="70px"
+              px="24px"
+              py="5px"
+              onClick={() => navigate("/admin/add-product")}
+              width={"200px"}
+              mr={3}
+            >
+              <PlusSquareIcon me="10px" />
+              Add Product
+            </Button>
+            
+            <Menu>
+              <MenuButton
+                as={Button}
+                rightIcon={<ChevronDownIcon />}
+                leftIcon={<FaFileExport />}
+                variant="outline"
+                colorScheme="blue"
+              >
+                Export
+              </MenuButton>
+              <MenuList>
+                <MenuItem icon={<FaDownload />} onClick={exportToExcel}>
+                  Export to Excel
+                </MenuItem>
+                <MenuItem icon={<FaDownload />} onClick={() => {
+                  const dataStr = JSON.stringify(products, null, 2);
+                  const blob = new Blob([dataStr], { type: 'application/json' });
+                  const url = URL.createObjectURL(blob);
+                  const link = document.createElement('a');
+                  link.href = url;
+                  link.download = 'products.json';
+                  link.click();
+                }}>
+                  Export to JSON
+                </MenuItem>
+              </MenuList>
+            </Menu>
+            
+            <Box ml={3} position="relative">
+              <Button
+                as="label"
+                leftIcon={<FaUpload />}
+                variant="outline"
+                colorScheme="green"
+                htmlFor="file-import"
+                cursor="pointer"
+              >
+                Import
+                <input
+                  type="file"
+                  id="file-import"
+                  accept=".xlsx,.xls,.csv,.json"
+                  onChange={handleFileImport}
+                  style={{ display: 'none' }}
+                />
+              </Button>
+            </Box>
+          </Flex>
+        </Flex>
+        
+        {/* Search Input */}
+        <Flex px="25px" mb="20px">
+          <InputGroup maxW="400px">
+            <InputLeftElement pointerEvents="none">
+              <FaSearch color="gray.300" />
+            </InputLeftElement>
+            <Input
+              placeholder="Search products..."
+              value={globalFilter ?? ''}
+              onChange={(e) => setGlobalFilter(e.target.value)}
+              borderRadius="20px"
+            />
+          </InputGroup>
+        </Flex>
+        
+        <Box>
+          {isLoading ? (
+            <Box p="20px">
+              {[...Array(5)].map((_, i) => (
+                <Skeleton key={i} height="40px" mb="10px" />
+              ))}
+            </Box>
+          ) : (
+            <>
+              <Table variant="simple" color="gray.500" mb="24px" mt="12px">
+                <Thead>
+                  {table.getHeaderGroups().map((headerGroup) => (
+                    <Tr key={headerGroup.id}>
+                      {headerGroup.headers.map((header) => (
+                        <Th key={header.id} borderColor={borderColor}>
+                          {flexRender(header.column.columnDef.header, header.getContext())}
+                        </Th>
+                      ))}
+                    </Tr>
+                  ))}
+                </Thead>
+                <Tbody>
+                  {table.getRowModel().rows.map((row) => (
+                    <Tr key={row.id}>
+                      {row.getVisibleCells().map((cell) => (
+                        <Td key={cell.id} borderColor="transparent">
+                          {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                        </Td>
+                      ))}
+                    </Tr>
+                  ))}
+                </Tbody>
+              </Table>
+              
+              {/* Pagination */}
+              {pagination.totalPages > 1 && (
+                <Flex justifyContent="center" mt={4} pb={4}>
+                  <Pagination
+                    currentPage={pagination.page}
+                    totalPages={pagination.totalPages}
+                    onPageChange={(newPage) => setPage(newPage)}
+                  />
+                </Flex>
+              )}
+            </>
+          )}
+        </Box>
+      </Card>
+    </div>
+  );
 };
 
 export default Products;

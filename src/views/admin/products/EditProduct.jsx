@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Box,
   Image,
@@ -23,20 +23,26 @@ import {
   useToast,
   FormControl,
   FormLabel,
+  Spinner,
 } from '@chakra-ui/react';
 import { FaUpload, FaTrash } from 'react-icons/fa6';
 import { IoMdArrowBack } from 'react-icons/io';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { useGetVarientsQuery } from 'api/varientSlice';
 import { useGetCategoriesQuery } from 'api/categorySlice';
 import { useGetBrandsQuery } from 'api/brandSlice';
-import { useAddProductMutation } from 'api/productSlice';
-import Swal from 'sweetalert2';
 import { useGetPharmaciesQuery } from 'api/pharmacySlice';
+import { useGetProductQuery, useUpdateProductMutation } from 'api/productSlice';
+import Swal from 'sweetalert2';
 import { useAddFileMutation } from 'api/filesSlice';
 import { useGetTypesQuery } from 'api/typeSlice';
 
-const AddProduct = () => {
+const EditProduct = () => {
+  const { id } = useParams();
+  const navigate = useNavigate();
+  const toast = useToast();
+
+  // State for form fields
   const [nameEn, setNameEn] = useState('');
   const [nameAr, setNameAr] = useState('');
   const [descriptionEn, setDescriptionEn] = useState('');
@@ -44,25 +50,37 @@ const AddProduct = () => {
   const [categoryId, setCategoryId] = useState('');
   const [brandId, setBrandId] = useState('');
   const [pharmacyId, setPharmacyId] = useState('');
-  const [productTypeId, setProductTypeId] = useState(''); // New state for product type
   const [cost, setCost] = useState('');
   const [price, setPrice] = useState('');
   const [quantity, setQuantity] = useState('');
+  const [productTypeId, setProductTypeId] = useState(''); // New state for product type
   const [offerType, setOfferType] = useState('');
-  const [offerPercentage, setOfferPercentage] = useState(null);
+  const [offerPercentage, setOfferPercentage] = useState('');
   const [hasVariants, setHasVariants] = useState(false);
   const [isActive, setIsActive] = useState(true);
   const [isPublished, setIsPublished] = useState(false);
-  const [images, setImages] = useState([]);
+  const [images, setImages] = useState([]); // Newly uploaded images
+  const [existingImages, setExistingImages] = useState([]); // Existing images from server
   const [mainImageIndex, setMainImageIndex] = useState(0);
-  const [selectedAttributes, setSelectedAttributes] = useState([]);
   const [isDragging, setIsDragging] = useState(false);
 
-  const [addProduct, { isLoading }] = useAddProductMutation();
-  const toast = useToast();
-  const navigate = useNavigate();
 
-  // Fetch data
+
+
+  // API queries
+  const { data: productResponse, isLoading: isProductLoading , refetch } =
+    useGetProductQuery(id);
+
+
+       // Trigger refetch when component mounts (navigates to)
+   React.useEffect(() => {
+    // Only trigger refetch if the data is not being loaded
+    if (!isProductLoading) {
+      refetch(); // Manually trigger refetch when component is mounted
+    }
+  }, [refetch, isProductLoading]); // Dependency array to ensure it only runs on mount
+
+  
   const { data: categoriesResponse } = useGetCategoriesQuery({
     page: 1,
     limit: 1000,
@@ -72,26 +90,81 @@ const AddProduct = () => {
     limit: 1000,
   });
   const { data: brandsResponse } = useGetBrandsQuery({ page: 1, limit: 1000 });
-  const { data: PharmacyResponse } = useGetPharmaciesQuery({
+  const { data: pharmaciesResponse } = useGetPharmaciesQuery({
     page: 1,
     limit: 1000,
   });
+  const [updateProduct, { isLoading: isUpdating }] = useUpdateProductMutation();
+
   const { data: productTypesResponse } = useGetTypesQuery({ page: 1, limit: 1000 }); // Fetch product types
-  
+  const productTypes = productTypesResponse?.data?.items || []; // Get product types from response
+
+  // Extract data from responses
+  const product = productResponse?.data;
   const categories = categoriesResponse?.data?.data || [];
   const variants = variantsResponse?.data || [];
   const brands = brandsResponse?.data || [];
-  const pharmacies = PharmacyResponse?.data?.items || [];
-  const productTypes = productTypesResponse?.data?.items || []; // Get product types from response
-  
+  const pharmacies = pharmaciesResponse?.data?.items || [];
   const textColor = useColorModeValue('secondaryGray.900', 'white');
   const [addFile] = useAddFileMutation();
+  // Initialize form with product data
+  useEffect(() => {
+    if (product) {
+      setNameEn(product.name || '');
+      setNameAr(
+        product.translations?.find((t) => t.languageId === 'ar')?.name || '',
+      );
+      setDescriptionEn(product.description || '');
+      setDescriptionAr(
+        product.translations?.find((t) => t.languageId === 'ar')?.description ||
+          '',
+      );
+      setCategoryId(product.categoryId || '');
+      setBrandId(product.brandId || '');
+      setPharmacyId(product.pharmacyId || '');
+      setProductTypeId(product.productTypeId || '');
+      setCost(product.cost || '');
+      setPrice(product.price || '');
+      setQuantity(product.quantity || '');
+      setOfferType(product.offerType || '');
+      setOfferPercentage(product.offerPercentage || '');
+      setHasVariants(product.hasVariants || false);
+      setIsActive(product.isActive ?? true);
+      setIsPublished(product.isPublished ?? false);
+
+      // Set existing images
+      if (product.images?.length > 0) {
+        setExistingImages(product.images);
+        const mainIndex = product.images.findIndex((img) => img.isMain);
+        setMainImageIndex(mainIndex >= 0 ? mainIndex : 0);
+      }
+
+      // Set variants if they exist
+      if (product.variants?.length > 0) {
+        const attributes = product.variants.map((variant) => ({
+          variantId: variant.variantId,
+          variantName: variant.variantName || 'Variant',
+          attributeId: variant.attributeId,
+          attributeValue: variant.attributeValue || '',
+          cost: variant.cost || '',
+          price: variant.price || '',
+          quantity: variant.quantity || '',
+          image: variant.imageKey
+            ? { name: variant.imageKey }
+            : null,
+          isActive: variant.isActive ?? true,
+        }));
+        setSelectedAttributes(attributes);
+      }
+    }
+  }, [product]);
 
   // Image handling
   const handleImageUpload = (files) => {
     if (files && files.length > 0) {
       const newImages = Array.from(files)
         .map((file) => {
+          // Validate file type
           if (!file.type.startsWith('image/')) {
             toast({
               title: 'Error',
@@ -105,31 +178,60 @@ const AddProduct = () => {
           return {
             file,
             preview: URL.createObjectURL(file),
-            isMain: images.length === 0,
+            isMain: images.length === 0 && existingImages.length === 0, // First image is main if no others exist
           };
         })
         .filter((img) => img !== null);
 
       setImages([...images, ...newImages]);
-      if (images.length === 0 && newImages.length > 0) {
+
+      // Set first uploaded image as main if no main exists
+      if (
+        existingImages.length === 0 &&
+        images.length === 0 &&
+        newImages.length > 0
+      ) {
         setMainImageIndex(0);
       }
     }
   };
 
-  const handleRemoveImage = (index) => {
-    URL.revokeObjectURL(images[index].preview);
-    const newImages = images.filter((_, i) => i !== index);
-    setImages(newImages);
-    if (mainImageIndex === index) {
-      setMainImageIndex(0);
-    } else if (mainImageIndex > index) {
-      setMainImageIndex(mainImageIndex - 1);
+  const handleSetMainImage = (index, isExisting) => {
+    if (isExisting) {
+      setMainImageIndex(index);
+      // Update isMain flags for existing images
+      setExistingImages(
+        existingImages.map((img, i) => ({
+          ...img,
+          isMain: i === index,
+        })),
+      );
+    } else {
+      // For new images, the index is offset by existing images count
+      setMainImageIndex(index + existingImages.length);
     }
   };
+  const handleRemoveImage = (index, isExisting) => {
+    if (isExisting) {
+      setExistingImages(existingImages.filter((_, i) => i !== index));
+      if (mainImageIndex === index) {
+        setMainImageIndex(0); // Reset to first image if main was removed
+      } else if (mainImageIndex > index) {
+        setMainImageIndex(mainImageIndex - 1); // Adjust index if needed
+      }
+    } else {
+      const newIndex = index - existingImages.length;
+      URL.revokeObjectURL(images[newIndex].preview); // Clean up memory
 
-  const handleSetMainImage = (index) => {
-    setMainImageIndex(index);
+      const newImages = images.filter((_, i) => i !== newIndex);
+      setImages(newImages);
+
+      if (mainImageIndex === index) {
+        setMainImageIndex(0);
+      } else if (mainImageIndex > index) {
+        setMainImageIndex(mainImageIndex - 1);
+      }
+    }
   };
 
   const handleDragOver = (e) => {
@@ -146,7 +248,8 @@ const AddProduct = () => {
     setIsDragging(false);
     handleImageUpload(e.dataTransfer.files);
   };
-
+  // Add this with your other state declarations
+  const [selectedAttributes, setSelectedAttributes] = useState([]);
   // Variant handling
   const handleVariantSelect = (e) => {
     const variantId = e.target.value;
@@ -183,7 +286,7 @@ const AddProduct = () => {
     e.preventDefault();
 
     try {
-      // Upload product images first
+      // Upload new images first
       const uploadedImages = [];
       if (images.length > 0) {
         const imageUploadPromises = images.map(async (img, index) => {
@@ -198,8 +301,8 @@ const AddProduct = () => {
           ) {
             return {
               imageKey: uploadResponse.data.uploadedFiles[0].url,
-              order: index,
-              isMain: index === mainImageIndex,
+              order: existingImages.length + index,
+              isMain: existingImages.length + index === mainImageIndex,
             };
           }
           return null;
@@ -209,28 +312,13 @@ const AddProduct = () => {
         uploadedImages.push(...results.filter((img) => img !== null));
       }
 
-      // Upload variant images if they exist
-      const variantsWithImages = await Promise.all(
-        selectedAttributes.map(async (attr) => {
-          if (attr.image) {
-            const formData = new FormData();
-            formData.append('file', attr.image);
-
-            const uploadResponse = await addFile(formData).unwrap();
-
-            if (
-              uploadResponse.success &&
-              uploadResponse.data.uploadedFiles.length > 0
-            ) {
-              return {
-                ...attr,
-                imageKey: uploadResponse.data.uploadedFiles[0].url,
-              };
-            }
-          }
-          return attr;
-        }),
-      );
+      // Prepare existing images data
+      const existingImagesData = existingImages.map((img, index) => ({
+        id: img.id,
+        imageKey: img.imageKey,
+        order: index,
+        isMain: index === mainImageIndex,
+      }));
 
       // Prepare translations
       const translations = [];
@@ -250,62 +338,50 @@ const AddProduct = () => {
       }
 
       // Prepare variants data
-      const variantsData = variantsWithImages.map((attr) => {
-        if (!attr.price) {
-          throw new Error('Price is required for each variant.');
-        }
-        return {
-          variantId: attr.variantId,
-          attributeId: attr.attributeId,
-          cost: attr.cost ? parseFloat(attr.cost) : 0,
-          price: parseFloat(attr.price),
-          quantity: attr.quantity ? parseInt(attr.quantity) : 0,
-          imageKey: attr.imageKey || undefined,
-          isActive: attr.isActive,
-        };
-      });
+      const variantsData = selectedAttributes.map((attr) => ({
+        variantId: attr.variantId,
+        attributeId: attr.attributeId,
+        cost: parseFloat(attr.cost) || 0,
+        price: parseFloat(attr.price) || 0,
+        quantity: parseInt(attr.quantity) || 0,
+        imageKey: attr.imageKey || undefined,
+        isActive: attr.isActive,
+      }));
 
       // Prepare product data
-      if (!price) {
-        throw new Error('Price is required for the product.');
-      }
       const productData = {
-        name: nameEn || undefined,
-        description: descriptionEn || undefined,
-        categoryId: categoryId || undefined,
-        brandId: brandId || undefined,
+        name: nameEn,
+        description: descriptionEn,
+        categoryId,
+        brandId,
         pharmacyId: JSON.parse(localStorage.getItem('pharmacy')).id,
-        productTypeId: productTypeId || undefined, // Add product type to the request
-        cost: cost === null ? undefined : parseFloat(cost),
+        productTypeId,
+        cost: cost ? parseFloat(cost) : null,
         price: parseFloat(price),
-        quantity: quantity === null ? undefined : parseInt(quantity),
-        offerType:
-          offerType === null
-            ? undefined
-            : offerType.toUpperCase().replace(' ', '_'),
-        offerPercentage:
-          offerPercentage != null ? parseFloat(offerPercentage) : null,
+        quantity: quantity ? parseInt(quantity) : null,
+        offerType: offerType || null,
+        offerPercentage: offerPercentage ? parseFloat(offerPercentage) : null,
         hasVariants,
         isActive,
         isPublished,
         translations: translations.filter((t) => t.name && t.description),
-        images: uploadedImages,
-        variants: hasVariants ? variantsData : undefined,
+        images: [...existingImagesData, ...uploadedImages],
+        // variants: hasVariants ? variantsData : [],
       };
 
-      // Remove any keys that are null
+      // Remove null values
       Object.keys(productData).forEach((key) => {
-        if (productData[key] == null || productData[key] === undefined) {
+        if (productData[key] === null || productData[key] === undefined) {
           delete productData[key];
         }
       });
 
       // Submit to API
-      const response = await addProduct(productData).unwrap();
+      const response = await updateProduct({ id, data: productData }).unwrap();
 
       toast({
         title: 'Success',
-        description: 'Product created successfully',
+        description: 'Product updated successfully',
         status: 'success',
         duration: 5000,
         isClosable: true,
@@ -316,7 +392,7 @@ const AddProduct = () => {
       toast({
         title: 'Error',
         description:
-          err.data?.message || err.message || 'Failed to create product',
+          err.data?.message || err.message || 'Failed to update product',
         status: 'error',
         duration: 5000,
         isClosable: true,
@@ -340,6 +416,22 @@ const AddProduct = () => {
     });
   };
 
+  if (isProductLoading) {
+    return (
+      <Flex justify="center" align="center" minH="100vh">
+        <Spinner size="xl" />
+      </Flex>
+    );
+  }
+
+  if (!product) {
+    return (
+      <Flex justify="center" align="center" minH="100vh">
+        <Text>Product not found</Text>
+      </Flex>
+    );
+  }
+
   return (
     <div className="container add-admin-container w-100">
       <div className="add-admin-card shadow p-4 bg-white w-100">
@@ -351,7 +443,7 @@ const AddProduct = () => {
             mb="20px !important"
             lineHeight="100%"
           >
-            Add New Product
+            Edit Product
           </Text>
           <Button
             type="button"
@@ -413,7 +505,7 @@ const AddProduct = () => {
             </Box>
           </SimpleGrid>
 
-          {/* Category, Brand, Pharmacy and Product Type */}
+          {/* Category, Brand, and Pharmacy */}
           <SimpleGrid columns={{ base: 1, md: 3 }} spacing={4} mb={4}>
             <Box>
               <FormControl isRequired>
@@ -449,14 +541,14 @@ const AddProduct = () => {
               </FormControl>
             </Box>
             {/* <Box>
-              <FormControl>
+              <FormControl isRequired>
                 <FormLabel>Pharmacy</FormLabel>
                 <Select
                   placeholder="Select Pharmacy"
                   value={pharmacyId}
                   onChange={(e) => setPharmacyId(e.target.value)}
                 >
-                  {pharmacies?.map((pharmacy) => (
+                  {pharmacies.map((pharmacy) => (
                     <option key={pharmacy.id} value={pharmacy.id}>
                       {pharmacy.name}
                     </option>
@@ -464,27 +556,29 @@ const AddProduct = () => {
                 </Select>
               </FormControl>
             </Box> */}
+
             <Box>
-              <FormControl>
-                <FormLabel>Product Type</FormLabel>
-                <Select
-                  placeholder="Select Product Type"
-                  value={productTypeId}
-                  onChange={(e) => setProductTypeId(e.target.value)}
-                >
-                  {productTypes.map((type) => (
-                    <option key={type.id} value={type.id}>
-                      {type.name}
-                    </option>
-                  ))}
-                </Select>
-              </FormControl>
-            </Box>
+                <FormControl>
+                  <FormLabel>Product Type</FormLabel>
+                  <Select
+                    placeholder="Select Product Type"
+                    value={productTypeId}
+                    onChange={(e) => setProductTypeId(e.target.value)}
+                  >
+                    {productTypes.map((type) => (
+                      <option key={type.id} value={type.id}>
+                        {type.name}
+                      </option>
+                    ))}
+                  </Select>
+                </FormControl>
+              </Box>
           </SimpleGrid>
 
-          <SimpleGrid columns={{ base: 1, md: 4 }} spacing={4} mb={4}>
+          {/* Pricing Information */}
+          <SimpleGrid columns={{ base: 1, md: 3 }} spacing={4} mb={4}>
             <Box>
-              <FormControl isRequired>
+              <FormControl>
                 <FormLabel>Cost</FormLabel>
                 <Input
                   type="number"
@@ -506,7 +600,7 @@ const AddProduct = () => {
               </FormControl>
             </Box>
             <Box>
-              <FormControl isRequired>
+              <FormControl>
                 <FormLabel>Quantity</FormLabel>
                 <Input
                   type="number"
@@ -516,21 +610,20 @@ const AddProduct = () => {
                 />
               </FormControl>
             </Box>
-            <Box>
-              <FormControl isRequired>
-                <FormLabel>SKU</FormLabel>
-                <Input
-                  type="number"
-                  placeholder="0"
-                />
-              </FormControl>
-            </Box>
           </SimpleGrid>
 
           {/* Offer Type */}
           <Box mb={4}>
             <FormLabel>Offer Type</FormLabel>
-            <RadioGroup value={offerType} onChange={setOfferType}>
+            <RadioGroup
+              value={offerType}
+              onChange={(value) => {
+                setOfferType(value);
+                if (value !== 'MONTHLY_OFFER') {
+                  setOfferPercentage('');
+                }
+              }}
+            >
               <Stack direction="row">
                 <Radio value="MONTHLY_OFFER">Monthly Offer</Radio>
                 <Radio value="NEW_ARRIVAL">New Arrival</Radio>
@@ -553,15 +646,14 @@ const AddProduct = () => {
           </Box>
 
           {/* Status Switches */}
-          <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4} mb={4}>
-          <FormControl display="flex" alignItems="center">
-              <FormLabel mb="0">Published</FormLabel>
+          <SimpleGrid columns={{ base: 1, md: 3 }} spacing={4} mb={4}>
+            <FormControl display="flex" alignItems="center">
+              <FormLabel mb="0">Has Variants</FormLabel>
               <Switch
-                isChecked={isPublished}
-                onChange={() => setIsPublished(!isPublished)}
+                isChecked={hasVariants}
+                onChange={() => setHasVariants(!hasVariants)}
               />
             </FormControl>
-
             <FormControl display="flex" alignItems="center">
               <FormLabel mb="0">Active</FormLabel>
               <Switch
@@ -569,12 +661,11 @@ const AddProduct = () => {
                 onChange={() => setIsActive(!isActive)}
               />
             </FormControl>
-            
             <FormControl display="flex" alignItems="center">
-              <FormLabel mb="0">Has Variants</FormLabel>
+              <FormLabel mb="0">Published</FormLabel>
               <Switch
-                isChecked={hasVariants}
-                onChange={() => setHasVariants(!hasVariants)}
+                isChecked={isPublished}
+                onChange={() => setIsPublished(!isPublished)}
               />
             </FormControl>
           </SimpleGrid>
@@ -616,7 +707,7 @@ const AddProduct = () => {
                       </CardHeader>
                       <CardBody>
                         <SimpleGrid columns={2} spacing={2}>
-                          <FormControl isRequired>
+                          <FormControl>
                             <FormLabel>Cost</FormLabel>
                             <Input
                               type="number"
@@ -644,7 +735,7 @@ const AddProduct = () => {
                               }
                             />
                           </FormControl>
-                          <FormControl isRequired>
+                          <FormControl>
                             <FormLabel>Quantity</FormLabel>
                             <Input
                               type="number"
@@ -663,36 +754,27 @@ const AddProduct = () => {
                             <Input
                               type="file"
                               accept="image/*"
-                              onChange={(e) => {
-                                if (e.target.files && e.target.files[0]) {
-                                  if (
-                                    !e.target.files[0].type.startsWith('image/')
-                                  ) {
-                                    toast({
-                                      title: 'Error',
-                                      description:
-                                        'Please upload only image files',
-                                      status: 'error',
-                                      duration: 5000,
-                                      isClosable: true,
-                                    });
-                                    return;
-                                  }
-                                  handleAttributeChange(
-                                    index,
-                                    'image',
-                                    e.target.files[0],
-                                  );
-                                }
-                              }}
+                              onChange={(e) =>
+                                handleAttributeChange(
+                                  index,
+                                  'image',
+                                  e.target.files[0],
+                                )
+                              }
                             />
                             {attr.image && (
-                              <Image
-                                src={URL.createObjectURL(attr.image)}
-                                alt="Variant preview"
-                                mt={2}
-                                maxH="100px"
-                              />
+                              <Box mt={2}>
+                                <Image
+                                  src={attr.image ? attr.image.name : undefined}
+                                  alt="Selected variant"
+                                  boxSize="100px"
+                                  objectFit="cover"
+                                  borderRadius="md"
+                                />
+                                {/* <Text fontSize="xs" color="gray.500" mt={1}>
+                                  {attr.image ? attr.image.name : 'No image selected'}
+                                </Text> */}
+                              </Box>
                             )}
                           </FormControl>
                         </SimpleGrid>
@@ -706,11 +788,8 @@ const AddProduct = () => {
 
           {/* Product Images */}
           <Box mb={4}>
-            <FormControl isRequired={images.length === 0}>
-              <FormLabel>
-                Product Images{' '}
-                {images.length === 0 && <span style={{ color: 'red' }}>*</span>}
-              </FormLabel>
+            <FormControl>
+              <FormLabel>Product Images</FormLabel>
               <Box
                 border="1px dashed"
                 borderColor={isDragging ? 'blue.500' : 'gray.200'}
@@ -742,25 +821,24 @@ const AddProduct = () => {
                 />
               </Box>
             </FormControl>
-
-            {images.length > 0 && (
+            {(existingImages.length > 0 || images.length > 0) && (
               <SimpleGrid columns={{ base: 2, md: 4 }} spacing={4} mt={4}>
-                {images.map((img, index) => (
-                  <Box key={index} position="relative">
+                {existingImages.map((img, index) => (
+                  <Box key={`existing-${index}`} position="relative">
                     <Image
-                      src={img.preview}
+                      src={img.imageKey}
                       alt={`Product image ${index + 1}`}
                       borderRadius="md"
                       border={
-                        mainImageIndex === index ? '2px solid' : '1px solid'
+                        index === mainImageIndex ? '2px solid' : '1px solid'
                       }
                       borderColor={
-                        mainImageIndex === index ? 'blue.500' : 'gray.200'
+                        index === mainImageIndex ? 'blue.500' : 'gray.200'
                       }
                       cursor="pointer"
-                      onClick={() => handleSetMainImage(index)}
+                      onClick={() => handleSetMainImage(index, true)}
                     />
-                    {mainImageIndex === index && (
+                    {index === mainImageIndex && (
                       <Badge
                         position="absolute"
                         top={2}
@@ -778,20 +856,65 @@ const AddProduct = () => {
                       position="absolute"
                       top={2}
                       right={2}
-                      onClick={() => handleRemoveImage(index)}
+                      onClick={() => handleRemoveImage(index, true)}
                     />
                   </Box>
                 ))}
+                {images.map((img, index) => {
+                  const globalIndex = existingImages.length + index;
+                  return (
+                    <Box key={`new-${index}`} position="relative">
+                      <Image
+                        src={img.preview}
+                        alt={`New image ${index + 1}`}
+                        borderRadius="md"
+                        border={
+                          globalIndex === mainImageIndex
+                            ? '2px solid'
+                            : '1px solid'
+                        }
+                        borderColor={
+                          globalIndex === mainImageIndex
+                            ? 'blue.500'
+                            : 'gray.200'
+                        }
+                        cursor="pointer"
+                        onClick={() => handleSetMainImage(globalIndex, false)}
+                      />
+                      {globalIndex === mainImageIndex && (
+                        <Badge
+                          position="absolute"
+                          top={2}
+                          left={2}
+                          colorScheme="blue"
+                        >
+                          Main
+                        </Badge>
+                      )}
+                      <IconButton
+                        icon={<FaTrash />}
+                        aria-label="Remove image"
+                        size="sm"
+                        colorScheme="red"
+                        position="absolute"
+                        top={2}
+                        right={2}
+                        onClick={() => handleRemoveImage(globalIndex, false)}
+                      />
+                    </Box>
+                  );
+                })}
               </SimpleGrid>
             )}
           </Box>
+
           {/* Submit Buttons */}
           <Flex justify="flex-end" gap={4}>
             <Button variant="outline" colorScheme="red" onClick={handleCancel}>
               Cancel
             </Button>
-            <Button type="submit" colorScheme="blue" isLoading={isLoading}>
-              Save Product
+            <Button type="submit" colorScheme="blue" isLoading={isUpdating}>
+              Update Product
             </Button>
           </Flex>
         </form>
@@ -800,4 +923,4 @@ const AddProduct = () => {
   );
 };
 
-export default AddProduct;
+export default EditProduct;

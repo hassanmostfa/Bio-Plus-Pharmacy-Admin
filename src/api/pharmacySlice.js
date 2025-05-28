@@ -48,6 +48,9 @@ export const pharmacyApi = createApi({
         method: "DELETE",
       }),
     }),
+    getStats: builder.query({
+      query: () => '/admin/stats/pharmacy',
+    }),
   }),
 });
 
@@ -58,4 +61,5 @@ export const {
   useAddPharmacyMutation,
   useUpdatePharmacyMutation,
   useDeletePharmacyMutation,
+  useGetStatsQuery,
 } = pharmacyApi;

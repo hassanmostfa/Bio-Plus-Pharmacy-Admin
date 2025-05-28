@@ -28,7 +28,9 @@ import { MdNotificationsNone, MdInfoOutline } from 'react-icons/md';
 import { IoMdMoon, IoMdSunny } from 'react-icons/io';
 import { FaEthereum } from 'react-icons/fa';
 import routes from 'routes';
+import { useNavigate } from 'react-router-dom';
 export default function HeaderLinks(props) {
+  const navigate = useNavigate();
   const { secondary } = props;
   const { colorMode, toggleColorMode } = useColorMode();
   // Chakra Color Mode
@@ -49,7 +51,9 @@ export default function HeaderLinks(props) {
    // Handle Logout
    const handleLogout = () => {
     localStorage.removeItem('token');
-    window.location.reload();
+    localStorage.removeItem('pharmacy');
+    navigate('/admin/auth/sign-in');
+ 
    }
   return (
     <Flex

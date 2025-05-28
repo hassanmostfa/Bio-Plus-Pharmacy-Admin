@@ -22,11 +22,14 @@ import Presecibtions from 'views/admin/presecibtions/Presecibtions';
 import AddPresecibtions from 'views/admin/presecibtions/AddPresecibtions';
 import ProtectedRoute from 'components/protectedRoute/ProtectedRoute';
 import EditRole from 'views/admin/roles/EditRole';
-import Products from 'views/admin/products/Products';
-import AddProduct from 'views/admin/products/AddProduct';
+
 import EditAdmin from 'views/admin/admins/EditAdmin';
 import ShowAdmin from 'views/admin/admins/ShowAdmin';
 import Orders from 'views/admin/orders/Orders';
+import Products from 'views/admin/products/Products';
+import ShowProduct from 'views/admin/products/ShowProduct';
+import EditProduct from 'views/admin/products/EditProduct';
+import AddProduct from 'views/admin/products/AddProduct';
 
 
 const routes = [
@@ -39,77 +42,77 @@ const routes = [
     showInSidebar: true,
   },
   /* Start Admin Routes */
-  {
-    name: 'Admin Management',
-    layout: '/admin',
-    icon: (
-      <Icon
-      as={MdAdminPanelSettings}
-      width="20px"
-      height="20px"
-      color="#8f9bba"
-      />
-    ),
-    component: null,
-    showInSidebar: true,
-    subRoutes: [
-      {
-        name: 'Admins',
-        path: '/admins',
-        icon: <Icon as={TiMinus} width="20px" height="20px" color="inherit" />,
-        component: <Admins />,
-        showInSidebar: true,
-      },
-      {
-        name: 'Rules',
-        path: '/rules',
-        icon: <Icon as={TiMinus} width="20px" height="20px" color="inherit" />,
-        component: <Roles />,
-        showInSidebar: true,
-      },
-    ],
-  },
-  {
-    name: 'Admin Management',
-    layout: '/admin',
-    path: '/add-New-Rule',
-    icon: (
-      <Icon as={FaRegCalendarDays} width="20px" height="20px" color="inherit" />
-    ),
-    component: <AddRole />,
-    showInSidebar: false,
-  },
-  {
-    name: 'Admin Management',
-    layout: '/admin',
-    path: '/edit/rule/:id',
-    icon: (
-      <Icon as={FaRegCalendarDays} width="20px" height="20px" color="inherit" />
-    ),
-    component: <EditRole />,
-    showInSidebar: false,
-  },
-  {
-    name: 'Admin Management',
-    layout: '/admin',
-    path: '/add-admin',
-    component: <AddAdmin />,
-    showInSidebar: false,
-  },
-  {
-    name: 'Admin Management',
-    layout: '/admin',
-    path: '/edit-admin/:id',
-    component: <EditAdmin />,
-    showInSidebar: false,
-  },
-  {
-    name: 'Admin Management',
-    layout: '/admin',
-    path: '/admin/details/:id',
-    component: <ShowAdmin />,
-    showInSidebar: false,
-  },
+  // {
+  //   name: 'Admin Management',
+  //   layout: '/admin',
+  //   icon: (
+  //     <Icon
+  //     as={MdAdminPanelSettings}
+  //     width="20px"
+  //     height="20px"
+  //     color="#8f9bba"
+  //     />
+  //   ),
+  //   component: null,
+  //   showInSidebar: true,
+  //   subRoutes: [
+  //     {
+  //       name: 'Admins',
+  //       path: '/admins',
+  //       icon: <Icon as={TiMinus} width="20px" height="20px" color="inherit" />,
+  //       component: <Admins />,
+  //       showInSidebar: true,
+  //     },
+  //     {
+  //       name: 'Rules',
+  //       path: '/rules',
+  //       icon: <Icon as={TiMinus} width="20px" height="20px" color="inherit" />,
+  //       component: <Roles />,
+  //       showInSidebar: true,
+  //     },
+  //   ],
+  // },
+  // {
+  //   name: 'Admin Management',
+  //   layout: '/admin',
+  //   path: '/add-New-Rule',
+  //   icon: (
+  //     <Icon as={FaRegCalendarDays} width="20px" height="20px" color="inherit" />
+  //   ),
+  //   component: <AddRole />,
+  //   showInSidebar: false,
+  // },
+  // {
+  //   name: 'Admin Management',
+  //   layout: '/admin',
+  //   path: '/edit/rule/:id',
+  //   icon: (
+  //     <Icon as={FaRegCalendarDays} width="20px" height="20px" color="inherit" />
+  //   ),
+  //   component: <EditRole />,
+  //   showInSidebar: false,
+  // },
+  // {
+  //   name: 'Admin Management',
+  //   layout: '/admin',
+  //   path: '/add-admin',
+  //   component: <AddAdmin />,
+  //   showInSidebar: false,
+  // },
+  // {
+  //   name: 'Admin Management',
+  //   layout: '/admin',
+  //   path: '/edit-admin/:id',
+  //   component: <EditAdmin />,
+  //   showInSidebar: false,
+  // },
+  // {
+  //   name: 'Admin Management',
+  //   layout: '/admin',
+  //   path: '/admin/details/:id',
+  //   component: <ShowAdmin />,
+  //   showInSidebar: false,
+  // },
   /* End Admin Routes */
   {
     name: 'Products',
@@ -118,6 +121,22 @@ const routes = [
     icon: <Icon as={MdInventory} width="20px" height="20px" color="inherit" />,
     component: <Products />,
     showInSidebar: true,
+  },
+  {
+    name: 'Products',
+    layout: '/admin',
+    path: '/products/:id',
+    icon: <Icon as={MdInventory} width="20px" height="20px" color="inherit" />,
+    component: <ShowProduct />,
+    showInSidebar: false,
+  },
+  {
+    name: 'Products',
+    layout: '/admin',
+    path: '/edit-product/:id',
+    icon: <Icon as={MdInventory} width="20px" height="20px" color="inherit" />,
+    component: <EditProduct />,
+    showInSidebar: false,
   },
   {
     name: 'Products',
@@ -141,22 +160,22 @@ const routes = [
     component: <Orders />,
     showInSidebar: true,
   },
-  {
-    name: 'Prescription',
-    layout: '/admin',
-    path: '/prescription',
-    icon: <Icon as={MdAssignment} width="20px" height="20px" color="inherit" />,
-    component: <Presecibtions />,
-    showInSidebar: true,
-  },
-  {
-    name: 'Prescription',
-    layout: '/admin',
-    path: '/add-prescription',
-    icon: <Icon as={MdAssignment} width="20px" height="20px" color="inherit" />,
-    component: <AddPresecibtions />,
-    showInSidebar: false,
-  },
+  // {
+  //   name: 'Prescription',
+  //   layout: '/admin',
+  //   path: '/prescription',
+  //   icon: <Icon as={MdAssignment} width="20px" height="20px" color="inherit" />,
+  //   component: <Presecibtions />,
+  //   showInSidebar: true,
+  // },
+  // {
+  //   name: 'Prescription',
+  //   layout: '/admin',
+  //   path: '/add-prescription',
+  //   icon: <Icon as={MdAssignment} width="20px" height="20px" color="inherit" />,
+  //   component: <AddPresecibtions />,
+  //   showInSidebar: false,
+  // },
   
   {
     name: "Logout",
