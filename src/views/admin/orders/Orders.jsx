@@ -37,12 +37,13 @@ import {
 } from '@tanstack/react-table';
 import React, { useState, useEffect } from 'react';
 import Card from 'components/card/Card';
-import { FaEye } from 'react-icons/fa6';
+import { FaEye, FaFilePdf, FaFileExcel } from 'react-icons/fa';
 import { IoMdPrint } from 'react-icons/io';
 import { useNavigate } from 'react-router-dom';
 import { useGetOrdersQuery } from 'api/orderSlice';
-
-
+import { jsPDF } from 'jspdf';
+import autoTable from 'jspdf-autotable';
+import * as XLSX from 'xlsx';
 
 const columnHelper = createColumnHelper();
 
@@ -66,7 +67,6 @@ const Orders = () => {
     startDate: '',
     endDate: '',
   });
-
 
   // Fetch orders with pagination and filters
   const { data: ordersResponse, isLoading, refetch } = useGetOrdersQuery({
@@ -176,6 +176,69 @@ const Orders = () => {
     printWindow.print();
   };
 
+  // Handle PDF Export
+  const handleExportPDF = () => {
+    const doc = new jsPDF();
+    
+    // Add title
+    doc.setFontSize(16);
+    doc.text('Orders Report', 14, 15);
+    
+    // Add date range if filters are applied
+    if (filters.startDate || filters.endDate) {
+      doc.setFontSize(10);
+      doc.text(`Date Range: ${filters.startDate || 'N/A'} to ${filters.endDate || 'N/A'}`, 14, 25);
+    }
+
+    // Prepare table data
+    const tableData = orders.map(order => [
+      order.orderNumber,
+      formatDate(order.createdAt),
+      order.user?.name || 'N/A',
+      order.user?.phoneNumber || 'N/A',
+      order.pharmacy?.name || 'N/A',
+      order.status,
+      order.paymentMethod,
+      order.total
+    ]);
+
+    // Add table using autoTable
+    autoTable(doc, {
+      head: [['Order #', 'Date', 'Customer', 'Phone', 'Pharmacy', 'Status', 'Payment', 'Total']],
+      body: tableData,
+      startY: 30,
+      theme: 'grid',
+      styles: { fontSize: 8 },
+      headStyles: { fillColor: [41, 128, 185] }
+    });
+
+    // Save the PDF
+    doc.save('orders-report.pdf');
+  };
+
+  // Handle Excel Export
+  const handleExportExcel = () => {
+    // Prepare data for Excel
+    const excelData = orders.map(order => ({
+      'Order #': order.orderNumber,
+      'Date': formatDate(order.createdAt),
+      'Customer': order.user?.name || 'N/A',
+      'Phone': order.user?.phoneNumber || 'N/A',
+      'Pharmacy': order.pharmacy?.name || 'N/A',
+      'Status': order.status,
+      'Payment': order.paymentMethod,
+      'Total': order.total
+    }));
+
+    // Create worksheet
+    const ws = XLSX.utils.json_to_sheet(excelData);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Orders');
+
+    // Save the Excel file
+    XLSX.writeFile(wb, 'orders-report.xlsx');
+  };
+
   const textColor = useColorModeValue('secondaryGray.900', 'white');
   const borderColor = useColorModeValue('gray.200', 'whiteAlpha.100');
 
@@ -275,23 +338,46 @@ const Orders = () => {
         <Flex px="25px" mb="8px" justifyContent="space-between" align="center">
           <Text color={textColor} fontSize="22px" fontWeight="700">All Orders</Text>
           <Box display="flex" gap="10px">
-
-           
-
-          <Button
-            variant="darkBrand"
-            color="white"
-            fontSize="sm"
-            fontWeight="500"
-            borderRadius="70px"
-            px="24px"
-            py="5px"
-            width={'200px'}
-            onClick={handlePrintSelectedOrders}
-            leftIcon={<IoMdPrint />}
-          >
-            Print Selected
-          </Button>
+            <Button
+              variant="darkBrand"
+              color="white"
+              fontSize="sm"
+              fontWeight="500"
+              borderRadius="70px"
+              px="24px"
+              py="5px"
+              onClick={handleExportPDF}
+              leftIcon={<FaFilePdf />}
+            >
+              Export PDF
+            </Button>
+            <Button
+              variant="darkBrand"
+              color="white"
+              fontSize="sm"
+              fontWeight="500"
+              borderRadius="70px"
+              px="24px"
+              py="5px"
+              onClick={handleExportExcel}
+              leftIcon={<FaFileExcel />}
+            >
+              Export Excel
+            </Button>
+            <Button
+              variant="darkBrand"
+              color="white"
+              fontSize="sm"
+              fontWeight="500"
+              borderRadius="70px"
+              px="24px"
+              py="5px"
+              width={'200px'}
+              onClick={handlePrintSelectedOrders}
+              leftIcon={<IoMdPrint />}
+            >
+              Print Selected
+            </Button>
           </Box>
         </Flex>
 
