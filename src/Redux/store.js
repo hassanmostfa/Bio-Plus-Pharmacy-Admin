@@ -6,6 +6,7 @@ import { filesApi } from "api/filesSlice";
 import { orderSlice } from "api/orderSlice";
 import { pharmacyApi } from "api/pharmacySlice";
 import { ProductApi } from "api/productSlice";
+import { PromocodeApi } from "api/promocodeSlice";
 import { roleApi } from "api/roleSlice";
 import { TypeApi } from "api/typeSlice";
 import { apiService } from "api/userSlice";
@@ -25,10 +26,11 @@ export const store = configureStore({
     [VarientApi.reducerPath]: VarientApi.reducer,
     [filesApi.reducerPath]: filesApi.reducer,
     [TypeApi.reducerPath]: TypeApi.reducer,
+    [PromocodeApi.reducerPath]: PromocodeApi.reducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware().concat(
-      
+      PromocodeApi.middleware,
       apiService.middleware,
       roleApi.middleware,
       pharmacyApi.middleware,

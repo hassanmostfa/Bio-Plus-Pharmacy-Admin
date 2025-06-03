@@ -30,6 +30,10 @@ import Products from 'views/admin/products/Products';
 import ShowProduct from 'views/admin/products/ShowProduct';
 import EditProduct from 'views/admin/products/EditProduct';
 import AddProduct from 'views/admin/products/AddProduct';
+import PromoCodes from 'views/admin/promoCodes/PromoCodes';
+import AddPromoCode from 'views/admin/promoCodes/AddPromoCode';
+import EditPromoCode from 'views/admin/promoCodes/EditPromoCode';
+import { CiDiscount1 } from 'react-icons/ci';
 
 
 const routes = [
@@ -176,7 +180,28 @@ const routes = [
   //   component: <AddPresecibtions />,
   //   showInSidebar: false,
   // },
-  
+  {
+    name: 'Promo Codes',
+    layout: '/admin',
+    path: '/promo-codes',
+    icon: <Icon as={CiDiscount1} width="20px" height="20px" color="inherit" />,
+    component: <PromoCodes />,
+    showInSidebar: true,
+  },
+  {
+    name: 'Promo Codes',
+    layout: '/admin',
+    path: '/add-promo-code',
+    component: <AddPromoCode />,
+    showInSidebar: false,
+  },
+  {
+    name: 'Promo Codes',
+    layout: '/admin',
+    path: '/edit-promo-code/:id',
+    component: <EditPromoCode />,
+    showInSidebar: false,
+  },
   {
     name: "Logout",
     path: "/logout",
