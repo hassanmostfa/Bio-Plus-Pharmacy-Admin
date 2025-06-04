@@ -24,7 +24,7 @@ export const PromocodeApi = createApi({
   endpoints: (builder) => ({
     getPromocodes: builder.query({
       query: (params) => ({
-        url: '/admin/promo-codes',
+        url: '/admin/promo-codes/pharmacy/promos',
         params: params, // Sends { page: 1, limit: 10 } as query params
       }),
     }),
