@@ -223,7 +223,7 @@ const Products = () => {
     columnHelper.accessor("price", {
       id: "price",
       header: () => <Text color="gray.400">Price</Text>,
-      cell: (info) => <Text color={textColor}>${info.getValue()}</Text>,
+      cell: (info) => <Text color={textColor}>kwd {info.getValue()}</Text>,
     }),
     columnHelper.accessor("quantity", {
       id: "quantity",

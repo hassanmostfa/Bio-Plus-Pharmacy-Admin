@@ -652,8 +652,8 @@ const Orders = () => {
                         <Text>Qty: {item.quantity}</Text>
                       </Box>
                       <Box textAlign="right">
-                        <Text>${item.price}</Text>
-                        <Text>Subtotal: ${item.subtotal}</Text>
+                        <Text>kwd {item.price}</Text>
+                        <Text>Subtotal: kwd {item.subtotal}</Text>
                       </Box>
                     </Flex>
                   ))}
@@ -661,9 +661,9 @@ const Orders = () => {
 
                 <Flex justifyContent="flex-end">
                   <Box textAlign="right">
-                    <Text>Subtotal: ${selectedOrder.subtotal}</Text>
-                    <Text>Delivery Fee: ${selectedOrder.deliveryFee}</Text>
-                    <Text fontWeight="bold" fontSize="lg">Total: ${selectedOrder.total}</Text>
+                    <Text>Subtotal: kwd {selectedOrder.subtotal}</Text>
+                    <Text>Delivery Fee: kwd {selectedOrder.deliveryFee}</Text>
+                    <Text fontWeight="bold" fontSize="lg">Total: kwd {selectedOrder.total}</Text>
                   </Box>
                 </Flex>
               </Box>
