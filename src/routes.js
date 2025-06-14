@@ -1,5 +1,5 @@
 import React from 'react';
-import { Icon } from '@chakra-ui/react';
+import { Icon, layout } from '@chakra-ui/react';
 import {
   MdHome,
   MdOutlineShoppingCart,
@@ -9,7 +9,7 @@ import {
 
 import { MdAdminPanelSettings } from 'react-icons/md';
 import { TiMinus } from 'react-icons/ti';
-import { FaRegCalendarDays } from 'react-icons/fa6';
+import { FaMoneyBill1, FaRegCalendarDays } from 'react-icons/fa6';
 import { RiLogoutCircleLine } from "react-icons/ri";
 
 // Admin Imports
@@ -34,6 +34,7 @@ import PromoCodes from 'views/admin/promoCodes/PromoCodes';
 import AddPromoCode from 'views/admin/promoCodes/AddPromoCode';
 import EditPromoCode from 'views/admin/promoCodes/EditPromoCode';
 import { CiDiscount1 } from 'react-icons/ci';
+import DeliveryFees from 'views/admin/deliveryFees/DeliveryFees';
 
 
 const routes = [
@@ -201,6 +202,14 @@ const routes = [
     path: '/edit-promo-code/:id',
     component: <EditPromoCode />,
     showInSidebar: false,
+  },
+  {
+    name: 'Delivery Fees',
+    layout: '/admin',
+    path: '/delivery-fees',
+    icon: <Icon as={FaMoneyBill1} width="20px" height="20px" color="inherit" />,
+    component: <DeliveryFees />,
+    showInSidebar: true,
   },
   {
     name: "Logout",
