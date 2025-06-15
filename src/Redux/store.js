@@ -11,6 +11,7 @@ import { roleApi } from "api/roleSlice";
 import { TypeApi } from "api/typeSlice";
 import { apiService } from "api/userSlice";
 import { VarientApi } from "api/varientSlice";
+import { prescriptionApi } from "api/prescription";
 
 // import { userApi, authReducer } from './userSlice';
 
@@ -27,6 +28,7 @@ export const store = configureStore({
     [filesApi.reducerPath]: filesApi.reducer,
     [TypeApi.reducerPath]: TypeApi.reducer,
     [PromocodeApi.reducerPath]: PromocodeApi.reducer,
+    [prescriptionApi.reducerPath]: prescriptionApi.reducer
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware().concat(
@@ -40,7 +42,8 @@ export const store = configureStore({
       BrandApi.middleware,
       VarientApi.middleware,
       filesApi.middleware,
-      TypeApi.middleware
+      TypeApi.middleware,
+      prescriptionApi.middleware
     ),
 });
 
