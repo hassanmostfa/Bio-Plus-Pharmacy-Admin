@@ -64,23 +64,18 @@ const EditProduct = () => {
   const [mainImageIndex, setMainImageIndex] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
 
-
-
-
   // API queries
   const { data: productResponse, isLoading: isProductLoading , refetch } =
     useGetProductQuery(id);
 
-
-       // Trigger refetch when component mounts (navigates to)
-   React.useEffect(() => {
+  // Trigger refetch when component mounts (navigates to)
+  React.useEffect(() => {
     // Only trigger refetch if the data is not being loaded
     if (!isProductLoading) {
       refetch(); // Manually trigger refetch when component is mounted
     }
   }, [refetch, isProductLoading]); // Dependency array to ensure it only runs on mount
 
-  
   const { data: categoriesResponse } = useGetCategoriesQuery({
     page: 1,
     limit: 1000,
@@ -416,6 +411,13 @@ const EditProduct = () => {
     });
   };
 
+  const cardBg = useColorModeValue('white', 'navy.700');
+  const inputBg = useColorModeValue('gray.100', 'gray.700');
+  const borderColor = useColorModeValue('gray.200', 'whiteAlpha.100');
+  const uploadBg = inputBg;
+  const uploadDragBg = useColorModeValue('blue.50', 'brand.900');
+  const inputTextColor = useColorModeValue(undefined, 'white');
+
   if (isProductLoading) {
     return (
       <Flex justify="center" align="center" minH="100vh">
@@ -433,9 +435,9 @@ const EditProduct = () => {
   }
 
   return (
-    <div className="container add-admin-container w-100">
-      <div className="add-admin-card shadow p-4 bg-white w-100">
-        <div className="mb-3 d-flex justify-content-between align-items-center">
+    <Flex direction="column" align="center" w="100%" mt={20}>
+      <Box bg={cardBg} borderRadius="lg" borderWidth="1px" borderColor={borderColor} p={6} w="100%" maxW="1200px">
+        <Flex mb={3} justify="space-between" align="center">
           <Text
             color={textColor}
             fontSize="22px"
@@ -454,7 +456,7 @@ const EditProduct = () => {
           >
             Back
           </Button>
-        </div>
+        </Flex>
         <form onSubmit={handleSubmit}>
           {/* Basic Information */}
           <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4} mb={4}>
@@ -465,6 +467,8 @@ const EditProduct = () => {
                   placeholder="Enter Product Name"
                   value={nameEn}
                   onChange={(e) => setNameEn(e.target.value)}
+                  bg={inputBg}
+                  color={inputTextColor}
                 />
               </FormControl>
             </Box>
@@ -476,6 +480,8 @@ const EditProduct = () => {
                   value={nameAr}
                   onChange={(e) => setNameAr(e.target.value)}
                   dir="rtl"
+                  bg={inputBg}
+                  color={inputTextColor}
                 />
               </FormControl>
             </Box>
@@ -489,6 +495,8 @@ const EditProduct = () => {
                   placeholder="Enter Product Description"
                   value={descriptionEn}
                   onChange={(e) => setDescriptionEn(e.target.value)}
+                  bg={inputBg}
+                  color={inputTextColor}
                 />
               </FormControl>
             </Box>
@@ -500,6 +508,8 @@ const EditProduct = () => {
                   value={descriptionAr}
                   onChange={(e) => setDescriptionAr(e.target.value)}
                   dir="rtl"
+                  bg={inputBg}
+                  color={inputTextColor}
                 />
               </FormControl>
             </Box>
@@ -514,6 +524,8 @@ const EditProduct = () => {
                   placeholder="Select Category"
                   value={categoryId}
                   onChange={(e) => setCategoryId(e.target.value)}
+                  bg={inputBg}
+                  color={inputTextColor}
                 >
                   {categories?.map((cat) => (
                     <option key={cat.id} value={cat.id}>
@@ -531,6 +543,8 @@ const EditProduct = () => {
                   placeholder="Select Brand"
                   value={brandId}
                   onChange={(e) => setBrandId(e.target.value)}
+                  bg={inputBg}
+                  color={inputTextColor}
                 >
                   {brands.map((brand) => (
                     <option key={brand.id} value={brand.id}>
@@ -564,6 +578,8 @@ const EditProduct = () => {
                     placeholder="Select Product Type"
                     value={productTypeId}
                     onChange={(e) => setProductTypeId(e.target.value)}
+                    bg={inputBg}
+                    color={inputTextColor}
                   >
                     {productTypes.map((type) => (
                       <option key={type.id} value={type.id}>
@@ -585,6 +601,8 @@ const EditProduct = () => {
                   placeholder="0.00"
                   value={cost}
                   onChange={(e) => setCost(e.target.value)}
+                  bg={inputBg}
+                  color={inputTextColor}
                 />
               </FormControl>
             </Box>
@@ -596,6 +614,8 @@ const EditProduct = () => {
                   placeholder="0.00"
                   value={price}
                   onChange={(e) => setPrice(e.target.value)}
+                  bg={inputBg}
+                  color={inputTextColor}
                 />
               </FormControl>
             </Box>
@@ -607,6 +627,8 @@ const EditProduct = () => {
                   placeholder="0"
                   value={quantity}
                   onChange={(e) => setQuantity(e.target.value)}
+                  bg={inputBg}
+                  color={inputTextColor}
                 />
               </FormControl>
             </Box>
@@ -639,6 +661,8 @@ const EditProduct = () => {
                     placeholder="0.0"
                     value={offerPercentage}
                     onChange={(e) => setOfferPercentage(e.target.value)}
+                    bg={inputBg}
+                    color={inputTextColor}
                   />
                 </FormControl>
               </Box>
@@ -678,6 +702,8 @@ const EditProduct = () => {
                 <Select
                   placeholder="Select Variant"
                   onChange={handleVariantSelect}
+                  bg={inputBg}
+                  color={inputTextColor}
                 >
                   {variants.map((variant) => (
                     <option key={variant.id} value={variant.id}>
@@ -690,7 +716,7 @@ const EditProduct = () => {
               {selectedAttributes.length > 0 && (
                 <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4}>
                   {selectedAttributes.map((attr, index) => (
-                    <Card key={index}>
+                    <Card key={index} bg={cardBg} borderColor={borderColor} borderWidth="1px">
                       <CardHeader>
                         <Flex justify="space-between" align="center">
                           <Text fontWeight="bold">
@@ -719,6 +745,8 @@ const EditProduct = () => {
                                   e.target.value,
                                 )
                               }
+                              bg={inputBg}
+                              color={inputTextColor}
                             />
                           </FormControl>
                           <FormControl isRequired>
@@ -733,6 +761,8 @@ const EditProduct = () => {
                                   e.target.value,
                                 )
                               }
+                              bg={inputBg}
+                              color={inputTextColor}
                             />
                           </FormControl>
                           <FormControl>
@@ -747,6 +777,8 @@ const EditProduct = () => {
                                   e.target.value,
                                 )
                               }
+                              bg={inputBg}
+                              color={inputTextColor}
                             />
                           </FormControl>
                           <FormControl>
@@ -761,6 +793,8 @@ const EditProduct = () => {
                                   e.target.files[0],
                                 )
                               }
+                              bg={inputBg}
+                              color={inputTextColor}
                             />
                             {attr.image && (
                               <Box mt={2}>
@@ -771,9 +805,6 @@ const EditProduct = () => {
                                   objectFit="cover"
                                   borderRadius="md"
                                 />
-                                {/* <Text fontSize="xs" color="gray.500" mt={1}>
-                                  {attr.image ? attr.image.name : 'No image selected'}
-                                </Text> */}
                               </Box>
                             )}
                           </FormControl>
@@ -792,7 +823,7 @@ const EditProduct = () => {
               <FormLabel>Product Images</FormLabel>
               <Box
                 border="1px dashed"
-                borderColor={isDragging ? 'blue.500' : 'gray.200'}
+                borderColor={isDragging ? 'blue.500' : borderColor}
                 borderRadius="md"
                 p={4}
                 textAlign="center"
@@ -800,7 +831,7 @@ const EditProduct = () => {
                 onDragLeave={handleDragLeave}
                 onDrop={handleDrop}
                 cursor="pointer"
-                bg={isDragging ? 'blue.50' : 'gray.50'}
+                bg={isDragging ? uploadDragBg : uploadBg}
               >
                 <Icon as={FaUpload} w={8} h={8} color="blue.500" mb={2} />
                 <Text>Drag & drop images here or</Text>
@@ -833,7 +864,7 @@ const EditProduct = () => {
                         index === mainImageIndex ? '2px solid' : '1px solid'
                       }
                       borderColor={
-                        index === mainImageIndex ? 'blue.500' : 'gray.200'
+                        index === mainImageIndex ? 'blue.500' : borderColor
                       }
                       cursor="pointer"
                       onClick={() => handleSetMainImage(index, true)}
@@ -876,7 +907,7 @@ const EditProduct = () => {
                         borderColor={
                           globalIndex === mainImageIndex
                             ? 'blue.500'
-                            : 'gray.200'
+                            : borderColor
                         }
                         cursor="pointer"
                         onClick={() => handleSetMainImage(globalIndex, false)}
@@ -918,8 +949,8 @@ const EditProduct = () => {
             </Button>
           </Flex>
         </form>
-      </div>
-    </div>
+      </Box>
+    </Flex>
   );
 };
 

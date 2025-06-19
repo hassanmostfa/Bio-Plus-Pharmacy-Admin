@@ -87,6 +87,12 @@ const AddProduct = () => {
   const textColor = useColorModeValue('secondaryGray.900', 'white');
   const [addFile] = useAddFileMutation();
 
+  const cardBg = useColorModeValue('white', 'gray.800');
+  const cardShadow = useColorModeValue('md', 'dark-lg');
+  const borderColor = useColorModeValue('gray.200', 'gray.700');
+  const uploadBg = useColorModeValue('gray.50', 'gray.700');
+  const uploadDragBg = useColorModeValue('blue.50', 'blue.900');
+
   // Image handling
   const handleImageUpload = (files) => {
     if (files && files.length > 0) {
@@ -341,9 +347,9 @@ const AddProduct = () => {
   };
 
   return (
-    <div className="container add-admin-container w-100">
-      <div className="add-admin-card shadow p-4 bg-white w-100">
-        <div className="mb-3 d-flex justify-content-between align-items-center">
+    <Flex direction="column" align="center" w="100%" mt={20}>
+      <Box bg={cardBg} boxShadow={cardShadow} borderRadius="lg" borderWidth="1px" borderColor={borderColor} p={6} w="100%" maxW="1200px">
+        <Flex mb={3} justify="space-between" align="center">
           <Text
             color={textColor}
             fontSize="22px"
@@ -362,7 +368,7 @@ const AddProduct = () => {
           >
             Back
           </Button>
-        </div>
+        </Flex>
         <form onSubmit={handleSubmit}>
           {/* Basic Information */}
           <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4} mb={4}>
@@ -373,6 +379,7 @@ const AddProduct = () => {
                   placeholder="Enter Product Name"
                   value={nameEn}
                   onChange={(e) => setNameEn(e.target.value)}
+                  color={textColor}
                 />
               </FormControl>
             </Box>
@@ -384,6 +391,7 @@ const AddProduct = () => {
                   value={nameAr}
                   onChange={(e) => setNameAr(e.target.value)}
                   dir="rtl"
+                  color={textColor}
                 />
               </FormControl>
             </Box>
@@ -713,7 +721,7 @@ const AddProduct = () => {
               </FormLabel>
               <Box
                 border="1px dashed"
-                borderColor={isDragging ? 'blue.500' : 'gray.200'}
+                borderColor={isDragging ? 'blue.500' : borderColor}
                 borderRadius="md"
                 p={4}
                 textAlign="center"
@@ -721,7 +729,7 @@ const AddProduct = () => {
                 onDragLeave={handleDragLeave}
                 onDrop={handleDrop}
                 cursor="pointer"
-                bg={isDragging ? 'blue.50' : 'gray.50'}
+                bg={isDragging ? uploadDragBg : uploadBg}
               >
                 <Icon as={FaUpload} w={8} h={8} color="blue.500" mb={2} />
                 <Text>Drag & drop images here or</Text>
@@ -795,8 +803,8 @@ const AddProduct = () => {
             </Button>
           </Flex>
         </form>
-      </div>
-    </div>
+      </Box>
+    </Flex>
   );
 };
 

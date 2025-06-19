@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Button, Input, Text, useColorModeValue, Spinner } from "@chakra-ui/react";
+import { Button, Input, Text, useColorModeValue, Spinner, Box } from "@chakra-ui/react";
 import Swal from "sweetalert2";
 import { useUpdatePharmacyMutation, useGetPharmacyQuery } from "api/pharmacySlice";
 
@@ -11,6 +11,11 @@ const DeliveryFees = () => {
   const { data: pharmacyData, isLoading: isFetching, error: fetchError } = useGetPharmacyQuery(pharmacyId);
 
   const [deliveryFee, setDeliveryFee] = useState("");
+
+  const cardBg = useColorModeValue('white', 'navy.700');
+  const inputBg = useColorModeValue('gray.100', 'gray.700');
+  const borderColor = useColorModeValue('gray.200', 'whiteAlpha.100');
+  const inputTextColor = useColorModeValue(undefined, 'white');
 
   useEffect(() => {
     if (pharmacyData) {
@@ -43,8 +48,8 @@ const DeliveryFees = () => {
   if (fetchError) return <Text color="red.500">Failed to load pharmacy data. Please try again.</Text>;
 
   return (
-    <div className="container add-admin-container w-100">
-      <div className="add-admin-card shadow p-4 bg-white w-100">
+    <div className="container w-100">
+      <Box bg={cardBg} borderRadius="lg" borderWidth="1px" borderColor={borderColor} p={6} w="100%" mx="auto">
         <Text color={textColor} fontSize="22px" fontWeight="700" mb="20px !important" lineHeight="100%">
           Delivery Fee Settings
         </Text>
@@ -52,7 +57,7 @@ const DeliveryFees = () => {
           <div className="mb-3">
             <Text color={textColor} fontSize="sm" fontWeight="700">
               Delivery Fee
-              <span className="text-danger mx-1">*</span>
+              <span style={{ color: 'red', marginLeft: 4 }}>*</span>
             </Text>
             <Input
               type="number"
@@ -63,6 +68,8 @@ const DeliveryFees = () => {
               required
               mt="8px"
               min="0"
+              bg={inputBg}
+              color={inputTextColor}
             />
           </div>
           <Button
@@ -80,7 +87,7 @@ const DeliveryFees = () => {
             Save
           </Button>
         </form>
-      </div>
+      </Box>
     </div>
   );
 };
