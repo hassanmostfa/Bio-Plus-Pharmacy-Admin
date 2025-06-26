@@ -74,11 +74,14 @@ const EditProduct = () => {
 
   // Trigger refetch when component mounts (navigates to)
   React.useEffect(() => {
+  // Trigger refetch when component mounts (navigates to)
+  React.useEffect(() => {
     // Only trigger refetch if the data is not being loaded
     if (!isProductLoading) {
       refetch(); // Manually trigger refetch when component is mounted
     }
   }, [refetch, isProductLoading]); // Dependency array to ensure it only runs on mount
+
 
   const { data: categoriesResponse } = useGetCategoriesQuery({
     page: 1,
@@ -419,6 +422,13 @@ const EditProduct = () => {
     });
   };
 
+  const cardBg = useColorModeValue('white', 'navy.700');
+  const inputBg = useColorModeValue('gray.100', 'gray.700');
+  const borderColor = useColorModeValue('gray.200', 'whiteAlpha.100');
+  const uploadBg = inputBg;
+  const uploadDragBg = useColorModeValue('blue.50', 'brand.900');
+  const inputTextColor = useColorModeValue(undefined, 'white');
+
   if (isProductLoading) {
     return (
       <Flex justify="center" align="center" minH="100vh">
@@ -458,7 +468,7 @@ const EditProduct = () => {
           >
             {isRTL ? 'رجوع' : 'Back'}
           </Button>
-        </div>
+        </Flex>
         <form onSubmit={handleSubmit}>
           {/* Basic Information */}
           <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4} mb={4}>
@@ -481,6 +491,8 @@ const EditProduct = () => {
                   value={nameAr}
                   onChange={(e) => setNameAr(e.target.value)}
                   dir="rtl"
+                  bg={inputBg}
+                  color={inputTextColor}
                 />
               </FormControl>
             </Box>
@@ -506,6 +518,8 @@ const EditProduct = () => {
                   value={descriptionAr}
                   onChange={(e) => setDescriptionAr(e.target.value)}
                   dir="rtl"
+                  bg={inputBg}
+                  color={inputTextColor}
                 />
               </FormControl>
             </Box>
@@ -703,7 +717,7 @@ const EditProduct = () => {
               {selectedAttributes.length > 0 && (
                 <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4}>
                   {selectedAttributes.map((attr, index) => (
-                    <Card key={index}>
+                    <Card key={index} bg={cardBg} borderColor={borderColor} borderWidth="1px">
                       <CardHeader>
                         <Flex justify="space-between" align="center" direction={isRTL ? 'row-reverse' : 'row'}>
                           <Text fontWeight="bold">
@@ -806,7 +820,7 @@ const EditProduct = () => {
               <FormLabel>{t('productForm.productImages')}</FormLabel>
               <Box
                 border="1px dashed"
-                borderColor={isDragging ? 'blue.500' : 'gray.200'}
+                borderColor={isDragging ? 'blue.500' : borderColor}
                 borderRadius="md"
                 p={4}
                 textAlign="center"
@@ -814,7 +828,7 @@ const EditProduct = () => {
                 onDragLeave={handleDragLeave}
                 onDrop={handleDrop}
                 cursor="pointer"
-                bg={isDragging ? 'blue.50' : 'gray.50'}
+                bg={isDragging ? uploadDragBg : uploadBg}
               >
                 <Icon as={FaUpload} w={8} h={8} color="blue.500" mb={2} />
                 <Text>{t('productForm.dragDropImages')}</Text>
@@ -847,7 +861,7 @@ const EditProduct = () => {
                         index === mainImageIndex ? '2px solid' : '1px solid'
                       }
                       borderColor={
-                        index === mainImageIndex ? 'blue.500' : 'gray.200'
+                        index === mainImageIndex ? 'blue.500' : borderColor
                       }
                       cursor="pointer"
                       onClick={() => handleSetMainImage(index, true)}
@@ -892,7 +906,7 @@ const EditProduct = () => {
                         borderColor={
                           globalIndex === mainImageIndex
                             ? 'blue.500'
-                            : 'gray.200'
+                            : borderColor
                         }
                         cursor="pointer"
                         onClick={() => handleSetMainImage(globalIndex, false)}
@@ -936,8 +950,8 @@ const EditProduct = () => {
             </Button>
           </Flex>
         </form>
-      </div>
-    </div>
+      </Box>
+    </Flex>
   );
 };
 

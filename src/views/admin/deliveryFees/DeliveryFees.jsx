@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Button, Input, Text, useColorModeValue, Spinner } from "@chakra-ui/react";
+import { Button, Input, Text, useColorModeValue, Spinner, Box } from "@chakra-ui/react";
 import Swal from "sweetalert2";
 import { useUpdatePharmacyMutation, useGetPharmacyQuery } from "api/pharmacySlice";
 import { useTranslation } from 'react-i18next';
@@ -15,6 +15,11 @@ const DeliveryFees = () => {
   const isRTL = i18n.language === 'ar';
 
   const [deliveryFee, setDeliveryFee] = useState("");
+
+  const cardBg = useColorModeValue('white', 'navy.700');
+  const inputBg = useColorModeValue('gray.100', 'gray.700');
+  const borderColor = useColorModeValue('gray.200', 'whiteAlpha.100');
+  const inputTextColor = useColorModeValue(undefined, 'white');
 
   useEffect(() => {
     if (pharmacyData) {
@@ -67,6 +72,8 @@ const DeliveryFees = () => {
               required
               mt="8px"
               min="0"
+              bg={inputBg}
+              color={inputTextColor}
             />
           </div>
           <Button
@@ -84,7 +91,7 @@ const DeliveryFees = () => {
             {t('deliveryFees.save')}
           </Button>
         </form>
-      </div>
+      </Box>
     </div>
   );
 };

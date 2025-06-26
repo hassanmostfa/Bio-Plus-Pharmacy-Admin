@@ -368,7 +368,7 @@ const AddProduct = () => {
           >
             {t('productForm.back')}
           </Button>
-        </div>
+        </Flex>
         <form onSubmit={handleSubmit}>
           {/* Basic Information */}
           <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4} mb={4}>
@@ -379,6 +379,7 @@ const AddProduct = () => {
                   placeholder={t('productForm.enterProductName')}
                   value={nameEn}
                   onChange={(e) => setNameEn(e.target.value)}
+                  color={textColor}
                 />
               </FormControl>
             </Box>
@@ -390,6 +391,7 @@ const AddProduct = () => {
                   value={nameAr}
                   onChange={(e) => setNameAr(e.target.value)}
                   dir="rtl"
+                  color={textColor}
                 />
               </FormControl>
             </Box>
@@ -727,7 +729,7 @@ const AddProduct = () => {
               </FormLabel>
               <Box
                 border="1px dashed"
-                borderColor={isDragging ? 'blue.500' : 'gray.200'}
+                borderColor={isDragging ? 'blue.500' : borderColor}
                 borderRadius="md"
                 p={4}
                 textAlign="center"
@@ -735,7 +737,7 @@ const AddProduct = () => {
                 onDragLeave={handleDragLeave}
                 onDrop={handleDrop}
                 cursor="pointer"
-                bg={isDragging ? 'blue.50' : 'gray.50'}
+                bg={isDragging ? uploadDragBg : uploadBg}
               >
                 <Icon as={FaUpload} w={8} h={8} color="blue.500" mb={2} />
                 <Text>{t('productForm.dragDropImages')}</Text>
@@ -809,8 +811,8 @@ const AddProduct = () => {
             </Button>
           </Flex>
         </form>
-      </div>
-    </div>
+      </Box>
+    </Flex>
   );
 };
 

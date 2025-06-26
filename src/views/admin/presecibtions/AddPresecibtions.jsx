@@ -2,65 +2,97 @@ import React, { useState } from "react";
 import {
   Box,
   Button,
+  Checkbox,
   Flex,
-  Input,
   Text,
   useColorModeValue,
-  Grid,
-  GridItem,
-  Select,
-  Icon,
+  Table,
+  Thead,
+  Tbody,
+  Tr,
+  Th,
+  Td,
+  Badge,
+  useToast,
+  Image,
+  NumberInput,
+  NumberInputField,
+  NumberInputStepper,
+  NumberIncrementStepper,
+  NumberDecrementStepper,
 } from "@chakra-ui/react";
 import { IoMdArrowBack } from "react-icons/io";
-import { useNavigate } from "react-router-dom";
-import { FaUpload } from "react-icons/fa6";
+import { useNavigate, useParams } from "react-router-dom";
+import { useGetProductsQuery } from "api/productSlice";
+import { useAddPrescriptionToCartMutation } from "api/prescription";
 
 const AddPrescription = () => {
-  const [formData, setFormData] = useState({
-    user: "",
-    phoneNumber: "",
-    uploadDate: "",
-    status: "new",
-    assignedPharmacy: "pending",
-    image: null,
+  const { id: prescriptionId } = useParams();
+  const toast = useToast();
+  const navigate = useNavigate();
+  const textColor = useColorModeValue("secondaryGray.900", "white");
+  const borderColor = useColorModeValue("gray.200", "whiteAlpha.100");
+  
+  // Fetch pharmacy products
+  const { data: productsResponse, isLoading } = useGetProductsQuery({ 
+    page: 1, 
+    limit: 100,
+    pharmacyId: JSON.parse(localStorage.getItem('pharmacy')).id 
   });
 
-  const textColor = useColorModeValue("secondaryGray.900", "white");
-  const navigate = useNavigate();
-  const [isDragging, setIsDragging] = useState(false);
+  const [addToCart] = useAddPrescriptionToCartMutation();
+  const [selectedProducts, setSelectedProducts] = useState([]);
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prevData) => ({ ...prevData, [name]: value }));
+  const handleSelectProduct = (productId, isChecked) => {
+    setSelectedProducts(prev => isChecked
+      ? [...prev, { productId, quantity: 1 }]
+      : prev.filter(item => item.productId !== productId)
+    );
   };
 
-  const handleImageUpload = (files) => {
-    if (files && files.length > 0) {
-      setFormData((prevData) => ({ ...prevData, image: files[0] }));
+  const handleQuantityChange = (productId, value) => {
+    const quantity = Math.max(1, parseInt(value) || 1);
+    setSelectedProducts(prev => 
+      prev.map(item => item.productId === productId ? { ...item, quantity } : item)
+    );
+  };
+
+  const handleAddToCart = async () => {
+    if (selectedProducts.length === 0) {
+      toast({
+        title: "No products selected",
+        status: "warning",
+        duration: 3000,
+        isClosable: true,
+      });
+      return;
     }
-  };
 
-  const handleDragOver = (e) => {
-    e.preventDefault();
-    setIsDragging(true);
-  };
+    try {
+      await addToCart({
+        id: prescriptionId,
+        products: selectedProducts.map(({ productId, quantity }) => ({
+          productId,
+          quantity
+        }))
+      }).unwrap();
 
-  const handleDragLeave = () => {
-    setIsDragging(false);
-  };
-
-  const handleDrop = (e) => {
-    e.preventDefault();
-    setIsDragging(false);
-    handleImageUpload(e.dataTransfer.files);
-  };
-
-  const handleFileInputChange = (e) => {
-    handleImageUpload(e.target.files);
-  };
-
-  const handleSubmit = () => {
-    console.log("Prescription Data:", formData);
+      toast({
+        title: "Added to cart",
+        status: "success",
+        duration: 3000,
+        isClosable: true,
+      });
+      navigate(-1);
+    } catch (error) {
+      toast({
+        title: "Error adding to cart",
+        description: error.message,
+        status: "error",
+        duration: 3000,
+        isClosable: true,
+      });
+    }
   };
 
   return (
@@ -68,7 +100,7 @@ const AddPrescription = () => {
       <div className="add-prescription-card shadow p-4 bg-white w-100">
         <div className="mb-3 d-flex justify-content-between align-items-center">
           <Text color={textColor} fontSize="22px" fontWeight="700">
-            Add New Prescription
+            Add Prescription to Cart
           </Text>
           <Button
             type="button"
@@ -81,151 +113,109 @@ const AddPrescription = () => {
           </Button>
         </div>
 
-        <form>
-          <Grid templateColumns="repeat(2, 1fr)" gap={4}>
-            <GridItem>
-              <Text color={textColor} fontSize="sm" fontWeight="700">
-                User <span className="text-danger">*</span>
-              </Text>
-              <Select
-                name="user"
-                value={formData.user}
-                onChange={handleChange}
-                mt={2}
-              >
-                <option value="" disabled hidden>
-                  Select User
-                </option>
-                <option value="John Doe">John Doe</option>
-                <option value="Jane Doe">Jane Doe</option>
-              </Select>
-            </GridItem>
-
-            <GridItem>
-              <Text color={textColor} fontSize="sm" fontWeight="700">
-                Phone Number <span className="text-danger">*</span>
-              </Text>
-              <Input
-                name="phoneNumber"
-                type="tel"
-                value={formData.phoneNumber}
-                onChange={handleChange}
-                mt={2}
-              />
-            </GridItem>
-
-            <GridItem>
-              <Text color={textColor} fontSize="sm" fontWeight="700">
-                Upload Date <span className="text-danger">*</span>
-              </Text>
-              <Input
-                name="uploadDate"
-                type="date"
-                value={formData.uploadDate}
-                onChange={handleChange}
-                mt={2}
-              />
-            </GridItem>
-
-            <GridItem>
-              <Text color={textColor} fontSize="sm" fontWeight="700">
-                Status <span className="text-danger">*</span>
-              </Text>
-              <Select
-                name="status"
-                value={formData.status}
-                onChange={handleChange}
-                mt={2}
-              >
-                <option value="new">New</option>
-                <option value="assigned">Assigned</option>
-                <option value="checkout">Checkout</option>
-              </Select>
-            </GridItem>
-
-            {/* <GridItem>
-              <Text color={textColor} fontSize="sm" fontWeight="700">
-                Assigned Pharmacy <span className="text-danger">*</span>
-              </Text>
-              <Input
-                name="assignedPharmacy"
-                type="text"
-                value={formData.assignedPharmacy}
-                onChange={handleChange}
-                mt={2}
-                placeholder="Pending until assigned"
-                readOnly
-              />
-            </GridItem> */}
-          </Grid>
-
-          {/* Drag-and-Drop Upload Section */}
-          <Box
-            border="1px dashed"
-            borderColor="gray.300"
-            borderRadius="md"
-            p={4}
-            textAlign="center"
-            backgroundColor="gray.100"
-            cursor="pointer"
-            onDragOver={handleDragOver}
-            onDragLeave={handleDragLeave}
-            onDrop={handleDrop}
-            mb={4}
-          >
-            <Icon as={FaUpload} w={8} h={8} color="#422afb" mb={2} />
-            <Text color="gray.500" mb={2}>
-              Drag & Drop Prescription Image Here
+        {isLoading ? (
+          <Text>Loading products...</Text>
+        ) : (
+          <>
+            <Text fontSize="lg" fontWeight="600" mb={4}>
+              Select products to add to cart:
             </Text>
-            <Text color="gray.500" mb={2}>
-              or
-            </Text>
-            <Button
-              variant="outline"
-              color="#422afb"
-              border="none"
-              onClick={() => document.getElementById("fileInput").click()}
-            >
-              Upload Image
-              <input
-                type="file"
-                id="fileInput"
-                hidden
-                accept="image/*"
-                onChange={handleFileInputChange}
-              />
-            </Button>
 
-            {formData.image && (
-              <Box mt={4} display="flex" justifyContent="center">
-                <img
-                  src={URL.createObjectURL(formData.image)}
-                  alt="Prescription"
-                  width={100}
-                  height={100}
-                  style={{ borderRadius: "8px", objectFit: "cover" }}
-                />
-              </Box>
-            )}
-          </Box>
+            <Box overflowX="auto">
+              <Table variant="simple" color="gray.500" mb="24px" mt="12px">
+                <Thead>
+                  <Tr>
+                    <Th pe="10px" borderColor={borderColor}>Select</Th>
+                    <Th pe="10px" borderColor={borderColor}>Product</Th>
+                    <Th pe="10px" borderColor={borderColor}>Image</Th>
+                    <Th pe="10px" borderColor={borderColor}>Price</Th>
+                    <Th pe="10px" borderColor={borderColor}>Available</Th>
+                    <Th pe="10px" borderColor={borderColor}>Quantity</Th>
+                  </Tr>
+                </Thead>
+                <Tbody>
+                  {productsResponse?.data?.map(product => {
+                    const isSelected = selectedProducts.some(p => p.productId === product.id);
+                    const quantity = isSelected 
+                      ? selectedProducts.find(p => p.productId === product.id).quantity
+                      : 1;
 
-          <Flex justify="center" mt={6}>
-            <Button variant="outline" colorScheme="red" mr={2}>
-              Cancel
-            </Button>
-            <Button
-              colorScheme="blue"
-              fontSize="sm"
-              fontWeight="500"
-              borderRadius="70px"
-              px="24px"
-              py="5px"
-              onClick={handleSubmit}
-            >
-              Save
-            </Button>
-          </Flex>
-        </form>
+                    return (
+                      <Tr key={product.id}>
+                        <Td fontSize={{ sm: '14px' }} minW={{ sm: '150px', md: '200px', lg: 'auto' }} borderColor="transparent">
+                          <Checkbox
+                            isChecked={isSelected}
+                            onChange={(e) => handleSelectProduct(product.id, e.target.checked)}
+                            colorScheme="blue"
+                          />
+                        </Td>
+                        <Td fontSize={{ sm: '14px' }} minW={{ sm: '150px', md: '200px', lg: 'auto' }} borderColor="transparent">
+                          <Text color={textColor}>{product.name}</Text>
+                        </Td>
+                        <Td fontSize={{ sm: '14px' }} minW={{ sm: '150px', md: '200px', lg: 'auto' }} borderColor="transparent">
+                          <Image
+                            src={product.mainImage}
+                            alt={product.name}
+                            boxSize="50px"
+                            objectFit="cover"
+                            borderRadius="md"
+                          />
+                        </Td>
+                        <Td fontSize={{ sm: '14px' }} minW={{ sm: '150px', md: '200px', lg: 'auto' }} borderColor="transparent">
+                          <Text color={textColor}>{product.price} KWD</Text>
+                        </Td>
+                        <Td fontSize={{ sm: '14px' }} minW={{ sm: '150px', md: '200px', lg: 'auto' }} borderColor="transparent">
+                          <Badge 
+                            colorScheme={product.quantity > 0 ? "green" : "red"}
+                            px={3}
+                            py={1}
+                            borderRadius="full"
+                          >
+                            {product.quantity}
+                          </Badge>
+                        </Td>
+                        <Td fontSize={{ sm: '14px' }} minW={{ sm: '150px', md: '200px', lg: 'auto' }} borderColor="transparent">
+                          {isSelected ? (
+                            <NumberInput
+                              min={1}
+                              max={product.quantity}
+                              value={quantity}
+                              onChange={(value) => handleQuantityChange(product.id, value)}
+                              width="100px"
+                            >
+                              <NumberInputField />
+                              <NumberInputStepper>
+                                <NumberIncrementStepper />
+                                <NumberDecrementStepper />
+                              </NumberInputStepper>
+                            </NumberInput>
+                          ) : (
+                            <Text color="gray.400">-</Text>
+                          )}
+                        </Td>
+                      </Tr>
+                    );
+                  })}
+                </Tbody>
+              </Table>
+            </Box>
+
+            <Flex justify="flex-end" mt={6}>
+              <Button
+                colorScheme="blue"
+                fontSize="sm"
+                fontWeight="500"
+                borderRadius="70px"
+                px="24px"
+                py="5px"
+                onClick={handleAddToCart}
+                isDisabled={selectedProducts.length === 0}
+              >
+                Add Selected to Cart ({selectedProducts.length})
+              </Button>
+            </Flex>
+          </>
+        )}
       </div>
     </div>
   );
