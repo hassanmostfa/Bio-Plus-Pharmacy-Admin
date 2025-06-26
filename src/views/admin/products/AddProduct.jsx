@@ -88,6 +88,9 @@ const AddProduct = () => {
   const productTypes = productTypesResponse?.data?.items || []; // Get product types from response
   
   const textColor = useColorModeValue('secondaryGray.900', 'white');
+  const borderColor = useColorModeValue('gray.200', 'whiteAlpha.100');
+  const uploadBg = useColorModeValue('gray.100', 'gray.700');
+  const uploadDragBg = useColorModeValue('blue.50', 'brand.900');
   const [addFile] = useAddFileMutation();
 
   const { t } = useTranslation();
@@ -347,9 +350,9 @@ const AddProduct = () => {
   };
 
   return (
-    <div className="container add-admin-container w-100" dir={isRTL ? 'rtl' : 'ltr'}>
-      <div className="add-admin-card shadow p-4 bg-white w-100">
-        <div className="mb-3 d-flex justify-content-between align-items-center">
+    <Box className="container add-admin-container w-100" dir={isRTL ? 'rtl' : 'ltr'}>
+      <Box className="add-admin-card shadow p-4 bg-white w-100">
+        <Flex className="mb-3 d-flex justify-content-between align-items-center">
           <Text
             color={textColor}
             fontSize="22px"
@@ -812,7 +815,7 @@ const AddProduct = () => {
           </Flex>
         </form>
       </Box>
-    </Flex>
+    </Box>
   );
 };
 

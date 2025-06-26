@@ -74,14 +74,11 @@ const EditProduct = () => {
 
   // Trigger refetch when component mounts (navigates to)
   React.useEffect(() => {
-  // Trigger refetch when component mounts (navigates to)
-  React.useEffect(() => {
     // Only trigger refetch if the data is not being loaded
     if (!isProductLoading) {
       refetch(); // Manually trigger refetch when component is mounted
     }
   }, [refetch, isProductLoading]); // Dependency array to ensure it only runs on mount
-
 
   const { data: categoriesResponse } = useGetCategoriesQuery({
     page: 1,
@@ -446,9 +443,9 @@ const EditProduct = () => {
   }
 
   return (
-    <div className="container add-admin-container w-100" dir={isRTL ? 'rtl' : 'ltr'}>
-      <div className="add-admin-card shadow p-4 bg-white w-100">
-        <div className="mb-3 d-flex justify-content-between align-items-center">
+    <Flex className="container add-admin-container w-100" dir={isRTL ? 'rtl' : 'ltr'}>
+      <Box className="add-admin-card shadow p-4 bg-white w-100">
+        <Flex className="mb-3 d-flex justify-content-between align-items-center">
           <Text
             color={textColor}
             fontSize="22px"

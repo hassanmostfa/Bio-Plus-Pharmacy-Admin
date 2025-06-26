@@ -53,7 +53,7 @@ const DeliveryFees = () => {
 
   return (
     <div className="container add-admin-container w-100" dir={isRTL ? 'rtl' : 'ltr'}>
-      <div className="add-admin-card shadow p-4 bg-white w-100">
+      <Box className="add-admin-card shadow p-4 bg-white w-100">
         <Text color={textColor} fontSize="22px" fontWeight="700" mb="20px !important" lineHeight="100%">
           {t('deliveryFees.title')}
         </Text>
@@ -92,6 +92,7 @@ const DeliveryFees = () => {
           </Button>
         </form>
       </Box>
+      
     </div>
   );
 };
