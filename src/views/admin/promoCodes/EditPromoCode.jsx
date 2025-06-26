@@ -22,11 +22,15 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { useGetPromocodesQuery, useUpdatePromocodeMutation } from 'api/promocodeSlice';
 import Swal from 'sweetalert2';
 import { IoMdArrowBack } from 'react-icons/io';
+import { useTranslation } from 'react-i18next';
+import i18n from '../../../i18n';
 
 const EditPromoCode = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const textColor = useColorModeValue('secondaryGray.900', 'white');
+  const { t } = useTranslation();
+  const isRTL = i18n.language === 'ar';
   
   // Fetch all promo codes
   const { data: promocodesResponse, isLoading: isFetching } = useGetPromocodesQuery({});
@@ -127,11 +131,11 @@ const EditPromoCode = () => {
   }
 
   return (
-    <div className="container add-promo-container w-100">
+    <div className="container add-promo-container w-100" dir={isRTL ? 'rtl' : 'ltr'}>
       <div className="add-promo-card shadow p-4 bg-white w-100" style={{ borderRadius: '15px' }}>
         <div className="mb-3 d-flex justify-content-between align-items-center">
           <Text color={textColor} fontSize="22px" fontWeight="700">
-            Edit Promo Code: {promoCode.code}
+            {t('promocode.editPromoCode')} {promoCode.code}
           </Text>
           <Button
             type="button"
@@ -140,7 +144,7 @@ const EditPromoCode = () => {
             size="sm"
             leftIcon={<IoMdArrowBack />}
           >
-            Back
+            {t('promocode.back')}
           </Button>
         </div>
 
@@ -149,7 +153,7 @@ const EditPromoCode = () => {
             {/* Promo Code Field */}
             <FormControl>
               <FormLabel color={textColor} fontSize="sm" fontWeight="700">
-                Promo Code
+                {t('promocode.promoCode')}
                 <span className="text-danger mx-1">*</span>
               </FormLabel>
               <Input
@@ -165,7 +169,7 @@ const EditPromoCode = () => {
             {/* Amount Field */}
             <FormControl>
               <FormLabel color={textColor} fontSize="sm" fontWeight="700">
-                Amount
+                {t('promocode.amount')}
                 <span className="text-danger mx-1">*</span>
               </FormLabel>
               <Input
@@ -181,7 +185,7 @@ const EditPromoCode = () => {
             {/* Type Dropdown */}
             <FormControl>
               <FormLabel color={textColor} fontSize="sm" fontWeight="700">
-                Type
+                {t('promocode.type')}
                 <span className="text-danger mx-1">*</span>
               </FormLabel>
               <Menu>
@@ -238,7 +242,7 @@ const EditPromoCode = () => {
             {/* End Date Field */}
             <FormControl>
               <FormLabel color={textColor} fontSize="sm" fontWeight="700">
-                End Date
+                {t('promocode.endDate')}
                 <span className="text-danger mx-1">*</span>
               </FormLabel>
               <Input
@@ -255,7 +259,7 @@ const EditPromoCode = () => {
             {/* Max Usage Field */}
             <FormControl>
               <FormLabel color={textColor} fontSize="sm" fontWeight="700">
-                Max Usage
+                {t('promocode.maxUsage')}
                 <span className="text-danger mx-1">*</span>
               </FormLabel>
               <Input
@@ -270,7 +274,7 @@ const EditPromoCode = () => {
             </FormControl>
             <FormControl>
               <FormLabel color={textColor} fontSize="sm" fontWeight="700">
-                Status
+                {t('promocode.status')}
                 <span className="text-danger mx-1">*</span>
               </FormLabel>
               <Menu>
@@ -313,7 +317,7 @@ const EditPromoCode = () => {
               onClick={() => navigate(-1)}
               width="120px"
             >
-              Cancel
+              {t('promocode.cancel')}
             </Button>
             <Button
               variant="darkBrand"
@@ -325,10 +329,10 @@ const EditPromoCode = () => {
               py="5px"
               type="submit"
               isLoading={isUpdating}
-              loadingText="Saving..."
+              loadingText={t('promocode.saving')}
               width="120px"
             >
-              Save Changes
+              {t('promocode.saveChanges')}
             </Button>
           </Flex>
         </form>

@@ -6,6 +6,7 @@ import Navbar from "components/navbar/NavbarAdmin.js";
 import Sidebar from "components/sidebar/Sidebar.js";
 import { SidebarContext } from "contexts/SidebarContext";
 import routes from "routes.js";
+import { useTranslation } from 'react-i18next';
 
 // Helper function to capitalize the first letter of each word
 const capitalizeFirstLetter = (string) => {
@@ -54,7 +55,11 @@ const getBreadcrumbPath = (pathname, routes) => {
     const matchedRoute = routes.find(route => `${route.layout}${route.path}` === currentPath);
 
     if (matchedRoute) {
-      breadcrumb.push(capitalizeFirstLetter(matchedRoute.name));
+      if (matchedRoute.name.startsWith('sidebar.')) {
+        breadcrumb.push(matchedRoute.name);
+      } else {
+        breadcrumb.push(capitalizeFirstLetter(matchedRoute.name));
+      }
     } else {
       breadcrumb.push(capitalizeFirstLetter(segment)); // Fallback to segment name
     }
@@ -69,12 +74,16 @@ const AdminLayout = (props) => {
   const [activeRoute, setActiveRoute] = useState("Dashboard");
   const location = useLocation();
   const { onOpen } = useDisclosure();
+  const { t } = useTranslation();
 
   // Update active route whenever location changes
   useEffect(() => {
     const breadcrumbPath = getBreadcrumbPath(location.pathname, routes);
     setActiveRoute(breadcrumbPath);
   }, [location]);
+
+  // Translate brandText if it's a translation key
+  const translatedBrandText = activeRoute && activeRoute.startsWith('sidebar.') ? t(activeRoute) : activeRoute;
 
   // Render routes for the app, including subroutes
   const getRoutes = (routes) => {
@@ -128,7 +137,7 @@ const AdminLayout = (props) => {
               <Navbar
                 onOpen={onOpen}
                 logoText={"Horizon UI Dashboard PRO"}
-                brandText={activeRoute} // Dynamically updated breadcrumb
+                brandText={translatedBrandText} // Use translated brandText
                 secondary={false}
                 message={""}
                 fixed={false}

@@ -5,14 +5,21 @@ import {
 	Link,
 	Text,
 	useColorModeValue,
+	Menu,
+	MenuButton,
+	MenuList,
+	MenuItem,
+	Button,
   } from '@chakra-ui/react';
   import PropTypes from 'prop-types';
   import React, { useState, useEffect } from 'react';
   import AdminNavbarLinks from 'components/navbar/NavbarLinksAdmin';
   import { removeIdFromRoute } from './RemoveIdFromRoute'; // Import the utility function
+  import { useTranslation } from 'react-i18next';
   
   export default function AdminNavbar(props) {
 	const [scrolled, setScrolled] = useState(false);
+	const { i18n, t } = useTranslation();
   
 	useEffect(() => {
 	  window.addEventListener('scroll', changeNavbar);
@@ -119,8 +126,7 @@ import {
 				boxShadow: 'none',
 			  }}
 			>
-			  {processedBrandText} {/* Display the processed brandText */}
-			  {console.log(processedBrandText)}
+			  {processedBrandText && processedBrandText.startsWith('sidebar.') ? t(processedBrandText) : processedBrandText}
 			</Link>
 		  </Box>
 		  <Box ms="auto" w={{ sm: '100%', md: 'unset' }}>
@@ -134,6 +140,19 @@ import {
 		  </Box>
 		</Flex>
 		{secondary ? <Text color="white">{message}</Text> : null}
+		<Menu>
+		  <MenuButton as={Button} variant="outline" size="sm" ml={4} leftIcon={<span>{i18n.language === 'ar' ? '🇸🇦' : '🇺🇸'}</span>}>
+			{i18n.language === 'ar' ? 'العربية' : 'English'}
+		  </MenuButton>
+		  <MenuList minW="120px">
+			<MenuItem icon={<span role="img" aria-label="English">🇺🇸</span>} onClick={() => i18n.changeLanguage('en')}>
+			  English
+			</MenuItem>
+			<MenuItem icon={<span role="img" aria-label="Arabic">🇸🇦</span>} onClick={() => i18n.changeLanguage('ar')}>
+			  العربية
+			</MenuItem>
+		  </MenuList>
+		</Menu>
 	  </Box>
 	);
   }

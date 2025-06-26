@@ -41,6 +41,8 @@ import { useGetProductsQuery, useDeleteProductMutation, useUpdateProductMutation
 import Swal from "sweetalert2";
 import Pagination from "theme/components/Pagination";
 import * as XLSX from 'xlsx';
+import { useTranslation } from "react-i18next";
+import i18n from "../../../i18n";
 
 const columnHelper = createColumnHelper();
 
@@ -53,6 +55,7 @@ const Products = () => {
   const [updateProduct] = useUpdateProductMutation();
   const navigate = useNavigate();
   const toast = useToast();
+  const { t } = useTranslation();
 
   const textColor = useColorModeValue("secondaryGray.900", "white");
   const borderColor = useColorModeValue("gray.200", "whiteAlpha.100");
@@ -124,38 +127,37 @@ const Products = () => {
   };
 
   const handleDelete = async (productId) => {
-     Swal.fire({
-      title: "Are you sure?",
-      text: "You won't be able to revert this!",
+    Swal.fire({
+      title: t('products.areYouSure'),
+      text: t('products.irreversible'),
       icon: "warning",
       showCancelButton: true,
       confirmButtonColor: "#3085d6",
       cancelButtonColor: "#d33",
-      confirmButtonText: "Yes, delete it!"
+      confirmButtonText: t('products.yesDelete')
     }).then(async (result) => {
-
-    if (result.isConfirmed) {
-      try {
-        await deleteProduct(productId).unwrap();
-        refetch();
-        toast({
-          title: "Deleted!",
-          description: "Product has been deleted.",
-          status: "success",
-          duration: 3000,
-          isClosable: true,
-        });
-      } catch (err) {
-        toast({
-          title: "Error",
-          description: err.data?.message || "Failed to delete product",
-          status: "error",
-          duration: 5000,
-          isClosable: true,
-        });
+      if (result.isConfirmed) {
+        try {
+          await deleteProduct(productId).unwrap();
+          refetch();
+          toast({
+            title: t('products.deleted'),
+            description: t('products.deletedMsg'),
+            status: "success",
+            duration: 3000,
+            isClosable: true,
+          });
+        } catch (err) {
+          toast({
+            title: t('products.error'),
+            description: err.data?.message || t('products.deleteFail'),
+            status: "error",
+            duration: 5000,
+            isClosable: true,
+          });
+        }
       }
-    }
-  });
+    });
   };
 
   // Export to Excel function
@@ -175,8 +177,8 @@ const Products = () => {
     XLSX.writeFile(workbook, "Products.xlsx");
     
     toast({
-      title: "Export Successful",
-      description: "Products data has been exported to Excel",
+      title: t('products.exportSuccess'),
+      description: t('products.exportMsg'),
       status: "success",
       duration: 3000,
       isClosable: true,
@@ -199,8 +201,8 @@ const Products = () => {
       console.log("Imported data:", jsonData);
       
       toast({
-        title: "Import Successful",
-        description: `${jsonData.length} products imported from file`,
+        title: t('products.importSuccess'),
+        description: t('products.importMsg', { count: jsonData.length }),
         status: "success",
         duration: 3000,
         isClosable: true,
@@ -209,56 +211,63 @@ const Products = () => {
     reader.readAsArrayBuffer(file);
   };
 
+  // Determine if RTL
+  const isRTL = i18n.language === 'ar';
+
   const columns = [
     columnHelper.accessor("name", {
       id: "name",
-      header: () => <Text color="gray.400">Product Name</Text>,
+      header: () => <Text color="gray.400">{t('products.productName')}</Text>,
       cell: (info) => <Text color={textColor}>{info.getValue()}</Text>,
     }),
     columnHelper.accessor("categoryName", {
       id: "category",
-      header: () => <Text color="gray.400">Category</Text>,
+      header: () => <Text color="gray.400">{t('products.category')}</Text>,
       cell: (info) => <Text color={textColor}>{info.getValue()}</Text>,
     }),
     columnHelper.accessor("price", {
       id: "price",
-      header: () => <Text color="gray.400">Price</Text>,
+      header: () => <Text color="gray.400">{t('products.price')}</Text>,
       cell: (info) => <Text color={textColor}>kwd {info.getValue()}</Text>,
     }),
     columnHelper.accessor("quantity", {
       id: "quantity",
-      header: () => <Text color="gray.400">Stock</Text>,
+      header: () => <Text color="gray.400">{t('products.stock')}</Text>,
       cell: (info) => <Text color={textColor}>{info.getValue()}</Text>,
     }),
     columnHelper.accessor("isActive", {
       id: "status",
-      header: () => <Text color="gray.400">Status</Text>,
+      header: () => <Text color="gray.400">{t('products.status')}</Text>,
       cell: (info) => (
-        <Switch
-          colorScheme="green"
-          isChecked={info.getValue()}
-          onChange={() => toggleStatus(info.row.original.id, info.getValue())}
-          isDisabled={isFetching}
-        />
+        <Box dir="ltr">
+          <Switch
+            colorScheme="green"
+            isChecked={info.getValue()}
+            onChange={() => toggleStatus(info.row.original.id, info.getValue())}
+            isDisabled={isFetching}
+          />
+        </Box>
       ),
     }),
     columnHelper.accessor("isPublished", {
       id: "publish",
-      header: () => <Text color="gray.400">Publish</Text>,
+      header: () => <Text color="gray.400">{t('products.publish')}</Text>,
       cell: (info) => (
-        <Switch
-          colorScheme="blue"
-          isChecked={info.getValue()}
-          onChange={() => togglePublish(info.row.original.id, info.getValue())}
-          isDisabled={isFetching}
-        />
+        <Box dir="ltr">
+          <Switch
+            colorScheme="blue"
+            isChecked={info.getValue()}
+            onChange={() => togglePublish(info.row.original.id, info.getValue())}
+            isDisabled={isFetching}
+          />
+        </Box>
       ),
     }),
     columnHelper.accessor("actions", {
       id: "actions",
-      header: () => <Text color="gray.400">Actions</Text>,
+      header: () => <Text color="gray.400">{t('products.actions')}</Text>,
       cell: (info) => (
-        <Flex>
+        <Flex ml={isRTL ? 2 : 0} mr={!isRTL ? 2 : 0}>
           <Icon
             w="18px"
             h="18px"
@@ -305,13 +314,13 @@ const Products = () => {
   });
 
   return (
-    <div className="container">
+    <div className="container" dir={isRTL ? 'rtl' : 'ltr'}>
       <Card flexDirection="column" w="100%" pt={"20px"} px="0px" overflowX="auto">
         <Flex px="25px" mb="8px" justifyContent="space-between" align="center">
           <Text color={textColor} fontSize="22px" fontWeight="700">
-            Products
+            {t('products.title')}
           </Text>
-          <Flex>
+          <Flex ml={isRTL ? 2 : 0} mr={!isRTL ? 2 : 0}>
             <Button
               variant="darkBrand"
               color="white"
@@ -322,10 +331,10 @@ const Products = () => {
               py="5px"
               onClick={() => navigate("/admin/add-product")}
               width={"200px"}
-              mr={3}
+              ml={isRTL ? 2 : 0} mr={!isRTL ? 2 : 0}
             >
               <PlusSquareIcon me="10px" />
-              Add Product
+              {t('products.add')}
             </Button>
             
             <Menu>
@@ -335,12 +344,13 @@ const Products = () => {
                 leftIcon={<FaFileExport />}
                 variant="outline"
                 colorScheme="blue"
+                ml={isRTL ? 2 : 0} mr={!isRTL ? 2 : 0}
               >
-                Export
+                {t('products.export')}
               </MenuButton>
               <MenuList>
                 <MenuItem icon={<FaDownload />} onClick={exportToExcel}>
-                  Export to Excel
+                  {t('products.exportExcel')}
                 </MenuItem>
                 <MenuItem icon={<FaDownload />} onClick={() => {
                   const dataStr = JSON.stringify(products, null, 2);
@@ -351,12 +361,12 @@ const Products = () => {
                   link.download = 'products.json';
                   link.click();
                 }}>
-                  Export to JSON
+                  {t('products.exportJson')}
                 </MenuItem>
               </MenuList>
             </Menu>
             
-            <Box ml={3} position="relative">
+            <Box ml={isRTL ? 2 : 0} mr={!isRTL ? 2 : 0} position="relative">
               <Button
                 as="label"
                 leftIcon={<FaUpload />}
@@ -365,7 +375,7 @@ const Products = () => {
                 htmlFor="file-import"
                 cursor="pointer"
               >
-                Import
+                {t('products.import')}
                 <input
                   type="file"
                   id="file-import"
@@ -385,7 +395,7 @@ const Products = () => {
               <FaSearch color="gray.300" />
             </InputLeftElement>
             <Input
-              placeholder="Search products..."
+              placeholder={t('products.searchPlaceholder')}
               value={globalFilter ?? ''}
               onChange={(e) => setGlobalFilter(e.target.value)}
               borderRadius="20px"

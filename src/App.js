@@ -10,6 +10,7 @@ import routes from './routes'; // Import your routes
 import SignInCentered from './views/auth/signIn/index';
 import ProtectedRoute from 'components/protectedRoute/ProtectedRoute';
 import { LanguageProvider } from "./components/auth/LanguageContext";
+import './i18n'; // Import i18n config
 
 export default function Main() {
   const [currentTheme, setCurrentTheme] = useState(initialTheme);

@@ -35,6 +35,8 @@ import { useGetPromocodesQuery } from "api/promocodeSlice";
 import Swal from "sweetalert2";
 import { FaSearch } from "react-icons/fa";
 import { useDeletePromocodeMutation } from "api/promocodeSlice";
+import { useTranslation } from "react-i18next";
+import i18n from '../../../i18n';
 
 const columnHelper = createColumnHelper();
 
@@ -86,12 +88,12 @@ const PromoCodes = () => {
   const columns = [
     columnHelper.accessor("code", {
       id: "code",
-      header: () => <Text color="gray.400">Code</Text>,
+      header: () => <Text color="gray.400">{t('promocode.code')}</Text>,
       cell: (info) => <Text color={textColor} fontWeight="600">{info.getValue()}</Text>,
     }),
     columnHelper.accessor("type", {
       id: "type",
-      header: () => <Text color="gray.400">Type</Text>,
+      header: () => <Text color="gray.400">{t('promocode.type')}</Text>,
       cell: (info) => (
         <Badge
           colorScheme={info.getValue() === "FIXED" ? "blue" : "purple"}
@@ -106,7 +108,7 @@ const PromoCodes = () => {
     }),
     columnHelper.accessor("amount", {
       id: "amount",
-      header: () => <Text color="gray.400">Amount</Text>,
+      header: () => <Text color="gray.400">{t('promocode.amount')}</Text>,
       cell: (info) => (
         <Text color={textColor}>
           {info.row.original.type === "FIXED" ? `kwd ${info.getValue()}` : `${info.getValue()}%`}
@@ -115,7 +117,7 @@ const PromoCodes = () => {
     }),
     columnHelper.accessor("endDate", {
       id: "endDate",
-      header: () => <Text color="gray.400">End Date</Text>,
+      header: () => <Text color="gray.400">{t('promocode.endDate')}</Text>,
       cell: (info) => (
         <Text color={textColor}>
           {new Date(info.getValue()).toLocaleDateString()}
@@ -124,12 +126,12 @@ const PromoCodes = () => {
     }),
     columnHelper.accessor("maxUsage", {
       id: "maxUsage",
-      header: () => <Text color="gray.400">Max Usage</Text>,
+      header: () => <Text color="gray.400">{t('promocode.maxUsage')}</Text>,
       cell: (info) => <Text color={textColor}>{info.getValue()}</Text>,
     }),
     columnHelper.accessor("countUsage", {
       id: "countUsage",
-      header: () => <Text color="gray.400">Used</Text>,
+      header: () => <Text color="gray.400">{t('promocode.used')}</Text>,
       cell: (info) => (
         <Text color={textColor}>
           {info.getValue()}/{info.row.original.maxUsage}
@@ -138,18 +140,19 @@ const PromoCodes = () => {
     }),
     columnHelper.accessor("isActive", {
       id: "status",
-      header: () => <Text color="gray.400">Status</Text>,
+      header: () => <Text color="gray.400">{t('promocode.status')}</Text>,
       cell: (info) => (
         <Switch
           colorScheme="green"
           isChecked={info.getValue()}
+          dir="ltr"
         //   onChange={() => toggleStatus(info.row.original.id, info.getValue())}
         />
       ),
     }),
     columnHelper.accessor("id", {
       id: "actions",
-      header: () => <Text color="gray.400">Actions</Text>,
+      header: () => <Text color="gray.400">{t('promocode.actions')}</Text>,
       cell: (info) => (
         <Flex>
           <Icon 
@@ -233,12 +236,15 @@ const PromoCodes = () => {
     setPage(1);
   };
 
+  const { t } = useTranslation();
+  const isRTL = i18n.language === 'ar';
+
   return (
-    <div className="container">
+    <div className="container" dir={isRTL ? 'rtl' : 'ltr'}>
       <Card flexDirection="column" w="100%" px="0px" overflowX={{ sm: 'scroll', lg: 'hidden' }}>
         <Flex px="25px" mb="8px" justifyContent="space-between" align="center">
           <Text color={textColor} fontSize="22px" fontWeight="700" lineHeight="100%">
-            Promo Codes
+            {t('promocode.title')}
           </Text>
           
           <Flex align="center" gap={4}>
@@ -277,7 +283,7 @@ const PromoCodes = () => {
               onClick={() => navigate('/admin/add-promo-code')}
               leftIcon={<PlusSquareIcon />}
             >
-              Add Promo Code
+              {t('promocode.addPromoCode')}
             </Button>
           </Flex>
         </Flex>
@@ -313,13 +319,14 @@ const PromoCodes = () => {
         <Flex justifyContent="space-between" alignItems="center" px="25px" py="10px">
           <Flex alignItems="center">
             <Text color={textColor} fontSize="sm" mr="10px">
-              Rows per page:
+              {t('promocode.rowsPerPage')}
             </Text>
             <Select
               value={limit}
               onChange={handleLimitChange}
               size="sm"
               w="80px"
+              dir="ltr"
             >
               <option value={10}>10</option>
               <option value={20}>20</option>
@@ -328,7 +335,7 @@ const PromoCodes = () => {
           </Flex>
           
           <Text color={textColor} fontSize="sm">
-            Page {pagination.page} of {pagination.totalPages}
+            {t('promocode.page')} {pagination.page} {t('promocode.of')} {pagination.totalPages}
           </Text>
           
           <Flex>
@@ -340,7 +347,7 @@ const PromoCodes = () => {
               mr="10px"
               leftIcon={<ChevronLeftIcon />}
             >
-              Previous
+              {t('promocode.previous')}
             </Button>
             <Button
               onClick={handleNextPage}
@@ -349,7 +356,7 @@ const PromoCodes = () => {
               size="sm"
               rightIcon={<ChevronRightIcon />}
             >
-              Next
+              {t('promocode.next')}
             </Button>
           </Flex>
         </Flex>

@@ -39,7 +39,7 @@ import DeliveryFees from 'views/admin/deliveryFees/DeliveryFees';
 
 const routes = [
   {
-    name: 'Super Admin',
+    name: 'sidebar.superAdmin',
     layout: '/admin',
     path: '/dashboard',
     icon: <Icon as={MdHome} width="20px" height="20px" color="inherit" />,
@@ -120,7 +120,7 @@ const routes = [
   // },
   /* End Admin Routes */
   {
-    name: 'Products',
+    name: 'sidebar.products',
     layout: '/admin',
     path: '/products',
     icon: <Icon as={MdInventory} width="20px" height="20px" color="inherit" />,
@@ -128,7 +128,7 @@ const routes = [
     showInSidebar: true,
   },
   {
-    name: 'Products',
+    name: 'sidebar.products',
     layout: '/admin',
     path: '/products/:id',
     icon: <Icon as={MdInventory} width="20px" height="20px" color="inherit" />,
@@ -136,7 +136,7 @@ const routes = [
     showInSidebar: false,
   },
   {
-    name: 'Products',
+    name: 'sidebar.products',
     layout: '/admin',
     path: '/edit-product/:id',
     icon: <Icon as={MdInventory} width="20px" height="20px" color="inherit" />,
@@ -151,7 +151,7 @@ const routes = [
     showInSidebar: false,
   },
   {
-    name: 'Orders',
+    name: 'sidebar.orders',
     layout: '/admin',
     path: '/orders',
     icon: (
@@ -182,7 +182,7 @@ const routes = [
   //   showInSidebar: false,
   // },
   {
-    name: 'Promo Codes',
+    name: 'sidebar.promoCodes',
     layout: '/admin',
     path: '/promo-codes',
     icon: <Icon as={CiDiscount1} width="20px" height="20px" color="inherit" />,
@@ -190,21 +190,21 @@ const routes = [
     showInSidebar: true,
   },
   {
-    name: 'Promo Codes',
+    name: 'sidebar.promoCodes',
     layout: '/admin',
     path: '/add-promo-code',
     component: <AddPromoCode />,
     showInSidebar: false,
   },
   {
-    name: 'Promo Codes',
+    name: 'sidebar.promoCodes',
     layout: '/admin',
     path: '/edit-promo-code/:id',
     component: <EditPromoCode />,
     showInSidebar: false,
   },
   {
-    name: 'Delivery Fees',
+    name: 'sidebar.deliveryFees',
     layout: '/admin',
     path: '/delivery-fees',
     icon: <Icon as={FaMoneyBill1} width="20px" height="20px" color="inherit" />,
@@ -212,7 +212,7 @@ const routes = [
     showInSidebar: true,
   },
   {
-    name: "Logout",
+    name: "sidebar.logout",
     path: "/logout",
     icon: <RiLogoutCircleLine />, // Add an appropriate icon
     layout: "/admin", // Adjust the layout as needed
