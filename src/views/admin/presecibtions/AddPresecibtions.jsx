@@ -25,6 +25,7 @@ import { IoMdArrowBack } from "react-icons/io";
 import { useNavigate, useParams } from "react-router-dom";
 import { useGetProductsQuery } from "api/productSlice";
 import { useAddPrescriptionToCartMutation } from "api/prescription";
+import { useTranslation } from 'react-i18next';
 
 const AddPrescription = () => {
   const { id: prescriptionId } = useParams();
@@ -32,6 +33,7 @@ const AddPrescription = () => {
   const navigate = useNavigate();
   const textColor = useColorModeValue("secondaryGray.900", "white");
   const borderColor = useColorModeValue("gray.200", "whiteAlpha.100");
+  const { t } = useTranslation();
   
   // Fetch pharmacy products
   const { data: productsResponse, isLoading } = useGetProductsQuery({ 
@@ -100,7 +102,7 @@ const AddPrescription = () => {
       <div className="add-prescription-card shadow p-4 bg-white w-100">
         <div className="mb-3 d-flex justify-content-between align-items-center">
           <Text color={textColor} fontSize="22px" fontWeight="700">
-            Add Prescription to Cart
+            {t('prescriptions.addPrescriptionToCart')}
           </Text>
           <Button
             type="button"
@@ -109,28 +111,28 @@ const AddPrescription = () => {
             size="sm"
             leftIcon={<IoMdArrowBack />}
           >
-            Back
+            {t('prescriptions.back')}
           </Button>
         </div>
 
         {isLoading ? (
-          <Text>Loading products...</Text>
+          <Text>{t('prescriptions.loadingProducts')}</Text>
         ) : (
           <>
             <Text fontSize="lg" fontWeight="600" mb={4}>
-              Select products to add to cart:
+              {t('prescriptions.selectProductsToAdd')}
             </Text>
 
             <Box overflowX="auto">
               <Table variant="simple" color="gray.500" mb="24px" mt="12px">
                 <Thead>
                   <Tr>
-                    <Th pe="10px" borderColor={borderColor}>Select</Th>
-                    <Th pe="10px" borderColor={borderColor}>Product</Th>
-                    <Th pe="10px" borderColor={borderColor}>Image</Th>
-                    <Th pe="10px" borderColor={borderColor}>Price</Th>
-                    <Th pe="10px" borderColor={borderColor}>Available</Th>
-                    <Th pe="10px" borderColor={borderColor}>Quantity</Th>
+                    <Th pe="10px" borderColor={borderColor}>{t('prescriptions.select')}</Th>
+                    <Th pe="10px" borderColor={borderColor}>{t('prescriptions.product')}</Th>
+                    <Th pe="10px" borderColor={borderColor}>{t('prescriptions.image')}</Th>
+                    <Th pe="10px" borderColor={borderColor}>{t('prescriptions.price')}</Th>
+                    <Th pe="10px" borderColor={borderColor}>{t('prescriptions.available')}</Th>
+                    <Th pe="10px" borderColor={borderColor}>{t('prescriptions.quantity')}</Th>
                   </Tr>
                 </Thead>
                 <Tbody>
@@ -211,7 +213,7 @@ const AddPrescription = () => {
                 onClick={handleAddToCart}
                 isDisabled={selectedProducts.length === 0}
               >
-                Add Selected to Cart ({selectedProducts.length})
+                {t('prescriptions.addSelectedToCart', { count: selectedProducts.length })}
               </Button>
             </Flex>
           </>

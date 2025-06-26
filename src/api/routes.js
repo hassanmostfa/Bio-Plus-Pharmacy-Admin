@@ -547,7 +547,7 @@ const routes = [
     showInSidebar: false,
   },
   {
-    name: 'Prescription',
+    name: 'sidebar.prescription',
     layout: '/admin',
     path: '/prescription',
     icon: <Icon as={MdAssignment} width="20px" height="20px" color="inherit" />,
@@ -555,7 +555,7 @@ const routes = [
     showInSidebar: true,
   },
   {
-    name: 'Prescription',
+    name: 'sidebar.prescription',
     layout: '/admin',
     path: '/add-prescription',
     icon: <Icon as={MdAssignment} width="20px" height="20px" color="inherit" />,

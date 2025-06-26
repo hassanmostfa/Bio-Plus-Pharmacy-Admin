@@ -21,7 +21,8 @@ const resources = {
         orders: 'Orders',
         promoCodes: 'Promo Codes',
         deliveryFees:'Delivery Fees',
-        logout:'Logout'
+        logout:'Logout',
+        prescription: 'Prescriptions'
       },
       dashboard: {
         totalOrders: 'Total Orders',
@@ -115,6 +116,40 @@ const resources = {
           PAID: 'Paid',
           UNPAID: 'Unpaid',
         },
+      },
+      prescriptions: {
+        allPrescriptions: "All Prescriptions",
+        user: "User",
+        prescription: "Prescription",
+        phoneNumber: "Phone Number",
+        uploadDate: "Upload Date",
+        status: "Status",
+        actions: "Actions",
+        select: "Select",
+        product: "Product",
+        image: "Image",
+        price: "Price",
+        available: "Available",
+        quantity: "Quantity",
+        statusEnum: {
+          PENDING: "Pending",
+          PROCESSING: "Processing",
+          COMPLETED: "Completed",
+          REJECTED: "Rejected"
+        },
+        addToCart: "Add to cart",
+        statusUpdated: "Status updated",
+        errorUpdatingStatus: "Error updating status",
+        loading: "Loading prescriptions...",
+        errorLoading: "Error loading prescriptions",
+        search: "Search...",
+        filterByStatus: "Filter by status",
+        allStatuses: "All Statuses",
+        addPrescriptionToCart: "Add Prescription to Cart",
+        back: "Back",
+        loadingProducts: "Loading products...",
+        selectProductsToAdd: "Select products to add to cart:",
+        addSelectedToCart: "Add Selected to Cart ({{count}})"
       },
       productForm: {
         addTitle: 'Add Product',
@@ -285,7 +320,8 @@ const resources = {
         orders: 'الطلبات',
         promoCodes: 'رموز الخصم',
         deliveryFees:'رسوم التوصيل',
-        logout:'تسجيل الخروج'
+        logout:'تسجيل الخروج',
+        prescription: 'الوصفات الطبية'
       },
       dashboard: {
         totalOrders: 'إجمالي الطلبات',
@@ -378,6 +414,40 @@ const resources = {
           PAID: 'مدفوع',
           UNPAID: 'غير مدفوع',
         },
+      },
+      prescriptions: {
+        allPrescriptions: "جميع الوصفات الطبية",
+        user: "المستخدم",
+        prescription: "الوصفة الطبية",
+        phoneNumber: "رقم الهاتف",
+        uploadDate: "تاريخ الرفع",
+        status: "الحالة",
+        actions: "الإجراءات",
+        select: "تحديد",
+        product: "المنتج",
+        image: "الصورة",
+        price: "السعر",
+        available: "المتوفر",
+        quantity: "الكمية",
+        statusEnum: {
+          PENDING: "قيد الانتظار",
+          PROCESSING: "قيد المعالجة",
+          COMPLETED: "مكتمل",
+          REJECTED: "مرفوض"
+        },
+        addToCart: "أضف إلى السلة",
+        statusUpdated: "تم تحديث الحالة",
+        errorUpdatingStatus: "حدث خطأ أثناء تحديث الحالة",
+        loading: "جارٍ تحميل الوصفات الطبية...",
+        errorLoading: "حدث خطأ أثناء تحميل الوصفات الطبية",
+        search: "ابحث...",
+        filterByStatus: "تصفية حسب الحالة",
+        allStatuses: "جميع الحالات",
+        addPrescriptionToCart: "إضافة وصفة طبية إلى السلة",
+        back: "رجوع",
+        loadingProducts: "جارٍ تحميل المنتجات...",
+        selectProductsToAdd: "اختر المنتجات لإضافتها إلى السلة:",
+        addSelectedToCart: "أضف المحدد إلى السلة ({{count}})"
       },
       productForm: {
         addTitle: 'إضافة منتج',
