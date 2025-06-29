@@ -19,6 +19,7 @@ import {
   IconButton,
   Select,
   Badge,
+  useToast,
 } from "@chakra-ui/react";
 import {
   createColumnHelper,
@@ -27,7 +28,7 @@ import {
   getSortedRowModel,
   useReactTable,
 } from "@tanstack/react-table";
-import { FaEye, FaTrash } from "react-icons/fa6";
+import { FaTrash } from "react-icons/fa6";
 import { EditIcon, PlusSquareIcon, ChevronLeftIcon, ChevronRightIcon } from "@chakra-ui/icons";
 import Card from "components/card/Card";
 import { useNavigate } from "react-router-dom";
@@ -35,63 +36,113 @@ import { useGetPromocodesQuery } from "api/promocodeSlice";
 import Swal from "sweetalert2";
 import { FaSearch } from "react-icons/fa";
 import { useDeletePromocodeMutation } from "api/promocodeSlice";
+import { useTranslation } from 'react-i18next';
 
 const columnHelper = createColumnHelper();
 
 const PromoCodes = () => {
   const navigate = useNavigate();
+  const toast = useToast();
+  const { t, i18n } = useTranslation();
+  const isRTL = i18n.language === 'ar';
+  
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
   const [searchQuery, setSearchQuery] = useState("");
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   
-  const { data: promocodesResponse, isLoading, refetch } = useGetPromocodesQuery({ page, limit ,pharmacyId:JSON.parse(localStorage.getItem("pharmacy")).id });
-    useEffect(()=>{
-        refetch();
-    },[]);
-    const bg = useColorModeValue('secondaryGray.300', 'gray.700'); 
+  // Color mode values
   const textColor = useColorModeValue("secondaryGray.900", "white");
   const borderColor = useColorModeValue("gray.200", "whiteAlpha.100");
-  
-  // Extract table data and pagination info
+  const searchBg = useColorModeValue("secondaryGray.300", "gray.700");
+  const inputText = useColorModeValue("gray.700", "white");
+  const tableRowHover = useColorModeValue("gray.50", "gray.600");
+  const bgColor = useColorModeValue("white", "gray.700");
+  const { data: promocodesResponse, isLoading, refetch } = useGetPromocodesQuery({ 
+    page, 
+    limit,
+    pharmacyId: JSON.parse(localStorage.getItem("pharmacy"))?.id 
+  });
+
+  useEffect(() => {
+    refetch();
+    
+    // Handle page reload or exit
+    const handleBeforeUnload = (e) => {
+      if (hasUnsavedChanges) {
+        e.preventDefault();
+        e.returnValue = 'You have unsaved changes. Are you sure you want to leave?';
+        return e.returnValue;
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, [hasUnsavedChanges, refetch]);
+
   const tableData = promocodesResponse?.data || [];
   const pagination = promocodesResponse?.pagination || { page: 1, limit: 10, totalItems: 0, totalPages: 1 };
   const [deletePromoCode] = useDeletePromocodeMutation();
-  // Filter data based on search query
+
   const filteredData = React.useMemo(() => {
     if (!searchQuery) return tableData;
     return tableData.filter((promo) =>
       Object.values(promo).some((value) =>
         String(value).toLowerCase().includes(searchQuery.toLowerCase())
-      )
-    );
+    ));
   }, [tableData, searchQuery]);
 
-  // Function to toggle status
-//   const toggleStatus = async (id, currentStatus) => {
-//     try {
-//       const newStatus = !currentStatus;
-//       await updateStatus({ id, isActive: newStatus }).unwrap();
-//       refetch();
-//       Swal.fire(
-//         'Success!',
-//         `Promo code ${newStatus ? 'activated' : 'deactivated'} successfully.`,
-//         'success'
-//       );
-//     } catch (error) {
-//       console.error('Failed to update status:', error);
-//       Swal.fire('Error!', 'Failed to update promo code status.', 'error');
-//     }
-//   };
+  const handleDelete = async (id) => {
+    try {
+      const result = await Swal.fire({
+        title: t('areYouSure'),
+        text: t('noRevert'),
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#3085d6',
+        cancelButtonColor: '#d33',
+        confirmButtonText: t('yesDeleteIt'),
+        background: {bgColor},
+        color: textColor,
+      });
+
+      if (result.isConfirmed) {
+        await deletePromoCode(id).unwrap();
+        setHasUnsavedChanges(true);
+        refetch();
+        toast({
+          title: t('deleted'),
+          description: t('promoCodeDeleted'),
+          status: 'success',
+          duration: 5000,
+          isClosable: true,
+          position: isRTL ? 'top-left' : 'top-right',
+        });
+      }
+    } catch (error) {
+      console.error('Failed to delete promo code:', error);
+      toast({
+        title: t('error'),
+        description: t('failedDeletePromoCode'),
+        status: 'error',
+        duration: 5000,
+        isClosable: true,
+        position: isRTL ? 'top-left' : 'top-right',
+      });
+    }
+  };
 
   const columns = [
     columnHelper.accessor("code", {
       id: "code",
-      header: () => <Text color="gray.400">Code</Text>,
+      header: () => <Text color="gray.400">{t('code')}</Text>,
       cell: (info) => <Text color={textColor} fontWeight="600">{info.getValue()}</Text>,
     }),
     columnHelper.accessor("type", {
       id: "type",
-      header: () => <Text color="gray.400">Type</Text>,
+      header: () => <Text color="gray.400">{t('type')}</Text>,
       cell: (info) => (
         <Badge
           colorScheme={info.getValue() === "FIXED" ? "blue" : "purple"}
@@ -100,13 +151,13 @@ const PromoCodes = () => {
           borderRadius="md"
           textTransform="capitalize"
         >
-          {info.getValue().toLowerCase()}
+          {t(info.getValue().toLowerCase())}
         </Badge>
       ),
     }),
     columnHelper.accessor("amount", {
       id: "amount",
-      header: () => <Text color="gray.400">Amount</Text>,
+      header: () => <Text color="gray.400">{t('amount')}</Text>,
       cell: (info) => (
         <Text color={textColor}>
           {info.row.original.type === "FIXED" ? `kwd ${info.getValue()}` : `${info.getValue()}%`}
@@ -115,7 +166,7 @@ const PromoCodes = () => {
     }),
     columnHelper.accessor("endDate", {
       id: "endDate",
-      header: () => <Text color="gray.400">End Date</Text>,
+      header: () => <Text color="gray.400">{t('endDate')}</Text>,
       cell: (info) => (
         <Text color={textColor}>
           {new Date(info.getValue()).toLocaleDateString()}
@@ -124,12 +175,12 @@ const PromoCodes = () => {
     }),
     columnHelper.accessor("maxUsage", {
       id: "maxUsage",
-      header: () => <Text color="gray.400">Max Usage</Text>,
+      header: () => <Text color="gray.400">{t('maxUsage')}</Text>,
       cell: (info) => <Text color={textColor}>{info.getValue()}</Text>,
     }),
     columnHelper.accessor("countUsage", {
       id: "countUsage",
-      header: () => <Text color="gray.400">Used</Text>,
+      header: () => <Text color="gray.400">{t('used')}</Text>,
       cell: (info) => (
         <Text color={textColor}>
           {info.getValue()}/{info.row.original.maxUsage}
@@ -138,47 +189,39 @@ const PromoCodes = () => {
     }),
     columnHelper.accessor("isActive", {
       id: "status",
-      header: () => <Text color="gray.400">Status</Text>,
+      header: () => <Text color="gray.400">{t('status')}</Text>,
       cell: (info) => (
         <Switch
           colorScheme="green"
           isChecked={info.getValue()}
-        //   onChange={() => toggleStatus(info.row.original.id, info.getValue())}
         />
       ),
     }),
     columnHelper.accessor("id", {
       id: "actions",
-      header: () => <Text color="gray.400">Actions</Text>,
+      header: () => <Text color="gray.400">{t('actions')}</Text>,
       cell: (info) => (
         <Flex>
-          <Icon 
-            w="18px" 
-            h="18px" 
-            me="10px" 
-            color="red.500" 
-            as={FaTrash} 
-            cursor="pointer" 
-            onClick={() => handleDelete(info.getValue())} 
+          <IconButton
+            aria-label={t('delete')}
+            icon={<FaTrash />}
+            size="sm"
+            variant="ghost"
+            colorScheme="red"
+            onClick={() => handleDelete(info.getValue())}
+            mr={2}
           />
-          <Icon 
-            w="18px" 
-            h="18px" 
-            me="10px" 
-            color="green.500" 
-            as={EditIcon} 
-            cursor="pointer" 
-            onClick={() => navigate(`/admin/edit-promo-code/${info.getValue()}`)} 
+          <IconButton
+            aria-label={t('edit')}
+            icon={<EditIcon />}
+            size="sm"
+            variant="ghost"
+            colorScheme="blue"
+            onClick={() => {
+              setHasUnsavedChanges(true);
+              navigate(`/admin/edit-promo-code/${info.getValue()}`);
+            }}
           />
-          {/* <Icon 
-            w="18px" 
-            h="18px" 
-            me="10px" 
-            color="blue.500" 
-            as={FaEye} 
-            cursor="pointer" 
-            onClick={() => navigate(`/admin/promo-code-details/${info.getValue()}`)} 
-          /> */}
         </Flex>
       ),
     }),
@@ -191,31 +234,6 @@ const PromoCodes = () => {
     getSortedRowModel: getSortedRowModel(),
   });
 
-  // Handle delete promo code
-  const handleDelete = async (id) => {
-    try {
-      const result = await Swal.fire({
-        title: 'Are you sure?',
-        text: "You won't be able to revert this!",
-        icon: 'warning',
-        showCancelButton: true,
-        confirmButtonColor: '#3085d6',
-        cancelButtonColor: '#d33',
-        confirmButtonText: 'Yes, delete it!',
-      });
-
-      if (result.isConfirmed) {
-        await deletePromoCode(id).unwrap();
-        refetch();
-        Swal.fire('Deleted!', 'The promo code has been deleted.', 'success');
-      }
-    } catch (error) {
-      console.error('Failed to delete promo code:', error);
-      Swal.fire('Error!', 'Failed to delete the promo code.', 'error');
-    }
-  };
-
-  // Pagination controls
   const handleNextPage = () => {
     if (page < pagination.totalPages) {
       setPage(page + 1);
@@ -234,11 +252,11 @@ const PromoCodes = () => {
   };
 
   return (
-    <div className="container">
+    <Box pt={{ base: '130px', md: '80px', xl: '80px' }} dir={isRTL ? "rtl" : "ltr"}>
       <Card flexDirection="column" w="100%" px="0px" overflowX={{ sm: 'scroll', lg: 'hidden' }}>
         <Flex px="25px" mb="8px" justifyContent="space-between" align="center">
           <Text color={textColor} fontSize="22px" fontWeight="700" lineHeight="100%">
-            Promo Codes
+            {t('promoCodes')}
           </Text>
           
           <Flex align="center" gap={4}>
@@ -255,29 +273,32 @@ const PromoCodes = () => {
               <Input
                 variant="search"
                 fontSize="sm"
-                bg = {bg}
-                color={textColor}
+                bg={searchBg}
+                color={inputText}
                 fontWeight="500"
                 _placeholder={{ color: 'gray.400', fontSize: '14px' }}
                 borderRadius="30px"
-                placeholder="Search..."
+                placeholder={t('search')}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
             </InputGroup>
             
             <Button
-              variant='darkBrand'
-              color='white'
-              fontSize='sm'
-              fontWeight='500'
-              borderRadius='70px'
-              px='24px'
-              py='5px'
-              onClick={() => navigate('/admin/add-promo-code')}
+              variant="darkBrand"
+              color="white"
+              fontSize="sm"
+              fontWeight="500"
+              borderRadius="70px"
+              px="24px"
+              py="5px"
+              onClick={() => {
+                setHasUnsavedChanges(true);
+                navigate('/admin/add-promo-code');
+              }}
               leftIcon={<PlusSquareIcon />}
             >
-              Add Promo Code
+              {t('addPromoCode')}
             </Button>
           </Flex>
         </Flex>
@@ -286,7 +307,7 @@ const PromoCodes = () => {
           <Table variant="simple" color="gray.500" mb="24px" mt="12px">
             <Thead>
               {table.getHeaderGroups().map((headerGroup) => (
-                <Tr key={headerGroup.id}>
+                <Tr key={headerGroup.id} bg={bgColor}>
                   {headerGroup.headers.map((header) => (
                     <Th key={header.id} borderColor={borderColor}>
                       {flexRender(header.column.columnDef.header, header.getContext())}
@@ -297,7 +318,7 @@ const PromoCodes = () => {
             </Thead>
             <Tbody>
               {table.getRowModel().rows.map((row) => (
-                <Tr key={row.id}>
+                <Tr key={row.id} _hover={{ bg: tableRowHover }}>
                   {row.getVisibleCells().map((cell) => (
                     <Td key={cell.id} borderColor="transparent">
                       {flexRender(cell.column.columnDef.cell, cell.getContext())}
@@ -313,13 +334,15 @@ const PromoCodes = () => {
         <Flex justifyContent="space-between" alignItems="center" px="25px" py="10px">
           <Flex alignItems="center">
             <Text color={textColor} fontSize="sm" mr="10px">
-              Rows per page:
+              {t('rowsPerPage')}:
             </Text>
             <Select
               value={limit}
               onChange={handleLimitChange}
               size="sm"
               w="80px"
+              variant="outline"
+              borderColor={borderColor}
             >
               <option value={10}>10</option>
               <option value={20}>20</option>
@@ -328,7 +351,7 @@ const PromoCodes = () => {
           </Flex>
           
           <Text color={textColor} fontSize="sm">
-            Page {pagination.page} of {pagination.totalPages}
+            {t('page')} {pagination.page} {t('of')} {pagination.totalPages}
           </Text>
           
           <Flex>
@@ -340,7 +363,7 @@ const PromoCodes = () => {
               mr="10px"
               leftIcon={<ChevronLeftIcon />}
             >
-              Previous
+              {t('previous')}
             </Button>
             <Button
               onClick={handleNextPage}
@@ -349,12 +372,12 @@ const PromoCodes = () => {
               size="sm"
               rightIcon={<ChevronRightIcon />}
             >
-              Next
+              {t('next')}
             </Button>
           </Flex>
         </Flex>
       </Card>
-    </div>
+    </Box>
   );
 };
 

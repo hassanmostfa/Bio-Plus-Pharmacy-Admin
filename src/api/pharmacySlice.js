@@ -3,24 +3,33 @@ import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 // Define your base URL
 const baseUrl = "https://back.biopluskw.com/api/v1";
 
-// Create the API slice using RTK Query
-export const pharmacyApi = createApi({
-  reducerPath: "pharmacyApi",
-  baseQuery: fetchBaseQuery({
+// Custom baseQuery that redirects on 401 Unauthorized
+const baseQueryWithRedirect = async (args, api, extraOptions) => {
+  const rawBaseQuery = fetchBaseQuery({
     baseUrl,
     prepareHeaders: (headers) => {
-      // Get the token from localStorage (or Redux state)
       const token = localStorage.getItem("token");
-
-      // If a token exists, add it to the headers
       if (token) {
         headers.set("Authorization", `Bearer ${token}`);
       }
-
       return headers;
     },
-  }),
+  });
 
+  const result = await rawBaseQuery(args, api, extraOptions);
+
+  if (result?.error?.status === 401) {
+    localStorage.removeItem("token");
+    window.location.href = "/admin/auth/sign-in"; // Adjust this if needed
+  }
+
+  return result;
+};
+
+// Create the API slice using RTK Query
+export const pharmacyApi = createApi({
+  reducerPath: "pharmacyApi",
+  baseQuery: baseQueryWithRedirect,
   endpoints: (builder) => ({
     getPharmacies: builder.query({
       query: () => '/admin/pharmacies',
