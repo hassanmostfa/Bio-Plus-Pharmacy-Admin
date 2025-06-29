@@ -138,6 +138,10 @@ const ShowProduct = () => {
                 <Text fontWeight="bold">{t('productForm.brand')}:</Text>
                 <Text>{product.brandName}</Text>
               </Flex>
+              <Flex justify="space-between">
+                <Text fontWeight="bold">SKU:</Text>
+                <Text>{product.sku}</Text>
+              </Flex>
               
               <Flex justify="space-between">
                 <Text fontWeight="bold">{t('productForm.pharmacy')}:</Text>
@@ -146,7 +150,7 @@ const ShowProduct = () => {
               
               <Flex justify="space-between">
                 <Text fontWeight="bold">{t('productForm.price')}:</Text>
-                <Text>${product.price}</Text>
+                <Text>kwd {product.price}</Text>
               </Flex>
               
               {product.offerPercentage && (
@@ -160,7 +164,7 @@ const ShowProduct = () => {
               
               <Flex justify="space-between">
                 <Text fontWeight="bold">{t('productForm.cost')}:</Text>
-                <Text>${product.cost}</Text>
+                <Text>kwd {product.cost}</Text>
               </Flex>
               
               <Flex justify="space-between">
@@ -174,7 +178,7 @@ const ShowProduct = () => {
                 <Text fontWeight="bold" mb={2}>{t('productForm.description')}:</Text>
                 <Text>{product.description}</Text>
               </Box>
-              
+
               {arabicTranslation && (
                 <Box>
                   <Text fontWeight="bold" mb={2}>{t('productForm.arabicDescription')}:</Text>

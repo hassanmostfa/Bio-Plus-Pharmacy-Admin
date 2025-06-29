@@ -57,6 +57,7 @@ const EditProduct = () => {
   const [cost, setCost] = useState('');
   const [price, setPrice] = useState('');
   const [quantity, setQuantity] = useState('');
+  const [sku, setSku] = useState('');
   const [productTypeId, setProductTypeId] = useState(''); // New state for product type
   const [offerType, setOfferType] = useState('');
   const [offerPercentage, setOfferPercentage] = useState('');
@@ -126,6 +127,7 @@ const EditProduct = () => {
       setCost(product.cost || '');
       setPrice(product.price || '');
       setQuantity(product.quantity || '');
+      setSku(product.sku || '');
       setOfferType(product.offerType || '');
       setOfferPercentage(product.offerPercentage || '');
       setHasVariants(product.hasVariants || false);
@@ -362,6 +364,7 @@ const EditProduct = () => {
         cost: cost ? parseFloat(cost) : null,
         price: parseFloat(price),
         quantity: quantity ? parseInt(quantity) : null,
+        sku: sku  ,
         offerType: offerType || null,
         offerPercentage: offerPercentage ? parseFloat(offerPercentage) : null,
         hasVariants,
@@ -587,7 +590,7 @@ const EditProduct = () => {
           </SimpleGrid>
 
           {/* Pricing Information */}
-          <SimpleGrid columns={{ base: 1, md: 3 }} spacing={4} mb={4}>
+          <SimpleGrid columns={{ base: 1, md: 4 }} spacing={4} mb={4}>
             <Box>
               <FormControl>
                 <FormLabel>{t('productForm.cost')}</FormLabel>
@@ -620,6 +623,19 @@ const EditProduct = () => {
                   placeholder="0"
                   value={quantity}
                   onChange={(e) => setQuantity(e.target.value)}
+                  dir={isRTL ? 'rtl' : 'ltr'}
+                />
+              </FormControl>
+            </Box>
+
+            <Box>
+              <FormControl isRequired>
+                <FormLabel>{t('productForm.sku')}</FormLabel>
+                <Input
+                  type="text"
+                  placeholder="0"
+                  value={sku}
+                  onChange={(e) => setSku(e.target.value)}
                   dir={isRTL ? 'rtl' : 'ltr'}
                 />
               </FormControl>
