@@ -41,6 +41,7 @@ import { useNavigate } from 'react-router-dom';
 import { CgAssign } from 'react-icons/cg';
 import { CiSearch } from "react-icons/ci";
 import { AiFillMedicineBox } from "react-icons/ai";
+import { useTranslation } from 'react-i18next';
 
 import { useGetPrescriptionsQuery, useUpdatePrescriptionStatusMutation } from "api/prescription";
 
@@ -53,6 +54,7 @@ const Prescriptions = () => {
   const { isOpen, onOpen, onClose } = useDisclosure();
   const [selectedPrescription, setSelectedPrescription] = React.useState(null);
   const [statusFilter, setStatusFilter] = React.useState('');
+  const { t } = useTranslation();
 
   // Fetch prescriptions from API
   const { data: apiResponse, isLoading, isError, refetch } = useGetPrescriptionsQuery();
@@ -84,15 +86,15 @@ const Prescriptions = () => {
 
   const columns = [
     columnHelper.accessor('user', {
-      header: 'User',
+      header: t('prescriptions.user'),
       cell: (info) => <Text color={textColor}>{info.getValue()}</Text>,
     }),
     columnHelper.accessor('image', {
-      header: 'Prescription',
+      header: t('prescriptions.prescription'),
       cell: (info) => (
         <img
           src={info.getValue()}
-          alt="Prescription"
+          alt={t('prescriptions.prescription')}
           width={70}
           height={70}
           style={{ borderRadius: '8px', cursor: 'pointer' }}
@@ -101,15 +103,15 @@ const Prescriptions = () => {
       ),
     }),
     columnHelper.accessor('phoneNumber', {
-      header: 'Phone Number',
+      header: t('prescriptions.phoneNumber'),
       cell: (info) => <Text color={textColor}>{info.getValue()}</Text>,
     }),
     columnHelper.accessor('uploadDate', {
-      header: 'Upload Date',
+      header: t('prescriptions.uploadDate'),
       cell: (info) => <Text color={textColor}>{info.getValue()}</Text>,
     }),
     columnHelper.accessor('status', {
-      header: 'Status',
+      header: t('prescriptions.status'),
       cell: (info) => {
         const status = info.getValue();
         let colorScheme;
@@ -124,13 +126,13 @@ const Prescriptions = () => {
         
         return (
           <Badge colorScheme={colorScheme} px={3} py={1} borderRadius="full">
-            {status}
+            {t(`prescriptions.statusEnum.${status}`)}
           </Badge>
         );
       },
     }),
     columnHelper.accessor('actions', {
-      header: 'Actions',
+      header: t('prescriptions.actions'),
       cell: (info) => {
         const prescription = info.row.original;
         
@@ -148,14 +150,14 @@ const Prescriptions = () => {
                   }).unwrap();
                   refetch();
                   toast({
-                    title: 'Status updated',
+                    title: t('prescriptions.statusUpdated'),
                     status: 'success',
                     duration: 3000,
                     isClosable: true,
                   });
                 } catch (error) {
                   toast({
-                    title: 'Error updating status',
+                    title: t('prescriptions.errorUpdatingStatus'),
                     description: error.message,
                     status: 'error',
                     duration: 3000,
@@ -164,10 +166,10 @@ const Prescriptions = () => {
                 }
               }}
             >
-              <option value="PENDING">PENDING</option>
-              <option value="PROCESSING">PROCESSING</option>
-              <option value="COMPLETED">COMPLETED</option>
-              <option value="REJECTED">REJECTED</option>
+              <option value="PENDING">{t('prescriptions.statusEnum.PENDING')}</option>
+              <option value="PROCESSING">{t('prescriptions.statusEnum.PROCESSING')}</option>
+              <option value="COMPLETED">{t('prescriptions.statusEnum.COMPLETED')}</option>
+              <option value="REJECTED">{t('prescriptions.statusEnum.REJECTED')}</option>
             </Select>
             
             <Icon
@@ -176,7 +178,7 @@ const Prescriptions = () => {
               h="18px"
               color="teal.500"
               cursor="pointer"
-              title="Add to cart"
+              title={t('prescriptions.addToCart')}
               onClick={() => navigate(`/admin/add-prescription/${prescription.id}`)}
             />
           </Flex>
@@ -196,8 +198,8 @@ const Prescriptions = () => {
     getSortedRowModel: getSortedRowModel(),
   });
 
-  if (isLoading) return <Text>Loading prescriptions...</Text>;
-  if (isError) return <Text>Error loading prescriptions</Text>;
+  if (isLoading) return <Text>{t('prescriptions.loading')}</Text>;
+  if (isError) return <Text>{t('prescriptions.errorLoading')}</Text>;
 
   return (
     <div className="container">
@@ -214,7 +216,7 @@ const Prescriptions = () => {
             fontWeight="700"
             lineHeight="100%"
           >
-            All Prescriptions
+            {t('prescriptions.allPrescriptions')}
           </Text>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <InputGroup borderRadius="15px" background={"gray.100"} w={{ base: "300", md: "300px" }}>
@@ -224,7 +226,7 @@ const Prescriptions = () => {
               <Input
                 variant="outline"
                 fontSize="sm"
-                placeholder="Search..."
+                placeholder={t('prescriptions.search')}
                 border="1px solid"
                 borderColor="gray.200"
                 _hover={{ borderColor: "gray.400" }}
@@ -233,7 +235,7 @@ const Prescriptions = () => {
             </InputGroup>
             
             <Select
-              placeholder="Filter by status"
+              placeholder={t('prescriptions.filterByStatus')}
               width="300px"
               background={"gray.100"}
               value={statusFilter}
@@ -245,11 +247,11 @@ const Prescriptions = () => {
               _hover={{ borderColor: "gray.400" }}
               borderRadius={"15px"}
             >
-              <option value="">All Statuses</option>
-              <option value="PENDING">PENDING</option>
-              <option value="PROCESSING">PROCESSING</option>
-              <option value="COMPLETED">COMPLETED</option>
-              <option value="REJECTED">REJECTED</option>
+              <option value="">{t('prescriptions.allStatuses')}</option>
+              <option value="PENDING">{t('prescriptions.statusEnum.PENDING')}</option>
+              <option value="PROCESSING">{t('prescriptions.statusEnum.PROCESSING')}</option>
+              <option value="COMPLETED">{t('prescriptions.statusEnum.COMPLETED')}</option>
+              <option value="REJECTED">{t('prescriptions.statusEnum.REJECTED')}</option>
             </Select>
           </div>
         </Flex>

@@ -35,6 +35,9 @@ import Swal from 'sweetalert2';
 import { useGetPharmaciesQuery } from 'api/pharmacySlice';
 import { useAddFileMutation } from 'api/filesSlice';
 import { useGetTypesQuery } from 'api/typeSlice';
+import { useTranslation } from "react-i18next";
+import i18n from "../../../i18n";
+import { ChevronDownIcon } from '@chakra-ui/icons';
 
 const AddProduct = () => {
   const [nameEn, setNameEn] = useState('');
@@ -85,13 +88,13 @@ const AddProduct = () => {
   const productTypes = productTypesResponse?.data?.items || []; // Get product types from response
   
   const textColor = useColorModeValue('secondaryGray.900', 'white');
+  const borderColor = useColorModeValue('gray.200', 'whiteAlpha.100');
+  const uploadBg = useColorModeValue('gray.100', 'gray.700');
+  const uploadDragBg = useColorModeValue('blue.50', 'brand.900');
   const [addFile] = useAddFileMutation();
 
-  const cardBg = useColorModeValue('white', 'gray.800');
-  const cardShadow = useColorModeValue('md', 'dark-lg');
-  const borderColor = useColorModeValue('gray.200', 'gray.700');
-  const uploadBg = useColorModeValue('gray.50', 'gray.700');
-  const uploadDragBg = useColorModeValue('blue.50', 'blue.900');
+  const { t } = useTranslation();
+  const isRTL = i18n.language === 'ar';
 
   // Image handling
   const handleImageUpload = (files) => {
@@ -347,9 +350,9 @@ const AddProduct = () => {
   };
 
   return (
-    <Flex direction="column" align="center" w="100%" mt={20}>
-      <Box bg={cardBg} boxShadow={cardShadow} borderRadius="lg" borderWidth="1px" borderColor={borderColor} p={6} w="100%" maxW="1200px">
-        <Flex mb={3} justify="space-between" align="center">
+    <Box className="container add-admin-container w-100" dir={isRTL ? 'rtl' : 'ltr'}>
+      <Box className="add-admin-card shadow p-4 bg-white w-100">
+        <Flex className="mb-3 d-flex justify-content-between align-items-center">
           <Text
             color={textColor}
             fontSize="22px"
@@ -357,7 +360,7 @@ const AddProduct = () => {
             mb="20px !important"
             lineHeight="100%"
           >
-            Add New Product
+            {t('productForm.addNewProduct')}
           </Text>
           <Button
             type="button"
@@ -366,7 +369,7 @@ const AddProduct = () => {
             size="sm"
             leftIcon={<IoMdArrowBack />}
           >
-            Back
+            {t('productForm.back')}
           </Button>
         </Flex>
         <form onSubmit={handleSubmit}>
@@ -374,9 +377,9 @@ const AddProduct = () => {
           <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4} mb={4}>
             <Box>
               <FormControl isRequired>
-                <FormLabel>Product Name (English)</FormLabel>
+                <FormLabel>{t('productForm.productNameEn')}</FormLabel>
                 <Input
-                  placeholder="Enter Product Name"
+                  placeholder={t('productForm.enterProductName')}
                   value={nameEn}
                   onChange={(e) => setNameEn(e.target.value)}
                   color={textColor}
@@ -385,9 +388,9 @@ const AddProduct = () => {
             </Box>
             <Box>
               <FormControl>
-                <FormLabel>Product Name (Arabic)</FormLabel>
+                <FormLabel>{t('productForm.productNameAr')}</FormLabel>
                 <Input
-                  placeholder="أدخل اسم المنتج"
+                  placeholder={t('productForm.enterProductNameAr')}
                   value={nameAr}
                   onChange={(e) => setNameAr(e.target.value)}
                   dir="rtl"
@@ -400,9 +403,9 @@ const AddProduct = () => {
           <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4} mb={4}>
             <Box>
               <FormControl isRequired>
-                <FormLabel>Description (English)</FormLabel>
+                <FormLabel>{t('productForm.descriptionEn')}</FormLabel>
                 <Textarea
-                  placeholder="Enter Product Description"
+                  placeholder={t('productForm.enterProductDescription')}
                   value={descriptionEn}
                   onChange={(e) => setDescriptionEn(e.target.value)}
                 />
@@ -410,9 +413,9 @@ const AddProduct = () => {
             </Box>
             <Box>
               <FormControl>
-                <FormLabel>Description (Arabic)</FormLabel>
+                <FormLabel>{t('productForm.descriptionAr')}</FormLabel>
                 <Textarea
-                  placeholder="أدخل وصف المنتج"
+                  placeholder={t('productForm.enterProductDescriptionAr')}
                   value={descriptionAr}
                   onChange={(e) => setDescriptionAr(e.target.value)}
                   dir="rtl"
@@ -425,11 +428,13 @@ const AddProduct = () => {
           <SimpleGrid columns={{ base: 1, md: 3 }} spacing={4} mb={4}>
             <Box>
               <FormControl isRequired>
-                <FormLabel>Category</FormLabel>
-                <Select
-                  placeholder="Select Category"
+                <FormLabel>{t('productForm.category')}</FormLabel>
+                <Box dir="ltr"><Select
+                  placeholder={t('productForm.selectCategory')}
                   value={categoryId}
                   onChange={(e) => setCategoryId(e.target.value)}
+                  icon={isRTL ? <ChevronDownIcon style={{ left: 8, right: 'auto', position: 'absolute' }} /> : <ChevronDownIcon />}
+                  textAlign={isRTL ? 'right' : 'left'}
                 >
                   {categories?.map((cat) => (
                     <option key={cat.id} value={cat.id}>
@@ -437,23 +442,25 @@ const AddProduct = () => {
                         ?.name || cat.name}
                     </option>
                   ))}
-                </Select>
+                </Select></Box>
               </FormControl>
             </Box>
             <Box>
               <FormControl isRequired>
-                <FormLabel>Brand</FormLabel>
-                <Select
-                  placeholder="Select Brand"
+                <FormLabel>{t('productForm.brand')}</FormLabel>
+                <Box dir="ltr"><Select
+                  placeholder={t('productForm.selectBrand')}
                   value={brandId}
                   onChange={(e) => setBrandId(e.target.value)}
+                  icon={isRTL ? <ChevronDownIcon style={{ left: 8, right: 'auto', position: 'absolute' }} /> : <ChevronDownIcon />}
+                  textAlign={isRTL ? 'right' : 'left'}
                 >
                   {brands.map((brand) => (
                     <option key={brand.id} value={brand.id}>
                       {brand.name}
                     </option>
                   ))}
-                </Select>
+                </Select></Box>
               </FormControl>
             </Box>
             {/* <Box>
@@ -474,18 +481,20 @@ const AddProduct = () => {
             </Box> */}
             <Box>
               <FormControl>
-                <FormLabel>Product Type</FormLabel>
-                <Select
-                  placeholder="Select Product Type"
+                <FormLabel>{t('productForm.productType')}</FormLabel>
+                <Box dir="ltr"><Select
+                  placeholder={t('productForm.selectProductType')}
                   value={productTypeId}
                   onChange={(e) => setProductTypeId(e.target.value)}
+                  icon={isRTL ? <ChevronDownIcon style={{ left: 8, right: 'auto', position: 'absolute' }} /> : <ChevronDownIcon />}
+                  textAlign={isRTL ? 'right' : 'left'}
                 >
                   {productTypes.map((type) => (
                     <option key={type.id} value={type.id}>
                       {type.name}
                     </option>
                   ))}
-                </Select>
+                </Select></Box>
               </FormControl>
             </Box>
           </SimpleGrid>
@@ -493,7 +502,7 @@ const AddProduct = () => {
           <SimpleGrid columns={{ base: 1, md: 4 }} spacing={4} mb={4}>
             <Box>
               <FormControl isRequired>
-                <FormLabel>Cost</FormLabel>
+                <FormLabel>{t('productForm.cost')}</FormLabel>
                 <Input
                   type="number"
                   placeholder="0.00"
@@ -504,7 +513,7 @@ const AddProduct = () => {
             </Box>
             <Box>
               <FormControl isRequired>
-                <FormLabel>Price</FormLabel>
+                <FormLabel>{t('productForm.price')}</FormLabel>
                 <Input
                   type="number"
                   placeholder="0.00"
@@ -515,7 +524,7 @@ const AddProduct = () => {
             </Box>
             <Box>
               <FormControl isRequired>
-                <FormLabel>Quantity</FormLabel>
+                <FormLabel>{t('productForm.quantity')}</FormLabel>
                 <Input
                   type="number"
                   placeholder="0"
@@ -526,9 +535,9 @@ const AddProduct = () => {
             </Box>
             <Box>
               <FormControl isRequired>
-                <FormLabel>SKU</FormLabel>
+                <FormLabel>{t('productForm.sku')}</FormLabel>
                 <Input
-                  type="number"
+                  type="text"
                   placeholder="0"
                 />
               </FormControl>
@@ -537,18 +546,18 @@ const AddProduct = () => {
 
           {/* Offer Type */}
           <Box mb={4}>
-            <FormLabel>Offer Type</FormLabel>
+            <FormLabel>{t('productForm.offerType')}</FormLabel>
             <RadioGroup value={offerType} onChange={setOfferType}>
               <Stack direction="row">
-                <Radio value="MONTHLY_OFFER">Monthly Offer</Radio>
-                <Radio value="NEW_ARRIVAL">New Arrival</Radio>
-                <Radio value="">None</Radio>
+                <Radio value="MONTHLY_OFFER">{t('productForm.monthlyOffer')}</Radio>
+                <Radio value="NEW_ARRIVAL">{t('productForm.newArrival')}</Radio>
+                <Radio value="">{t('productForm.none')}</Radio>
               </Stack>
             </RadioGroup>
             {offerType === 'MONTHLY_OFFER' && (
               <Box mt={2}>
                 <FormControl>
-                  <FormLabel>Offer Percentage</FormLabel>
+                  <FormLabel>{t('productForm.offerPercentage')}</FormLabel>
                   <Input
                     type="number"
                     placeholder="0.0"
@@ -563,27 +572,27 @@ const AddProduct = () => {
           {/* Status Switches */}
           <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4} mb={4}>
           <FormControl display="flex" alignItems="center">
-              <FormLabel mb="0">Published</FormLabel>
-              <Switch
+              <FormLabel mb="0">{t('productForm.published')}</FormLabel>
+              <Box dir="ltr"><Switch
                 isChecked={isPublished}
                 onChange={() => setIsPublished(!isPublished)}
-              />
+              /></Box>
             </FormControl>
 
             <FormControl display="flex" alignItems="center">
-              <FormLabel mb="0">Active</FormLabel>
-              <Switch
+              <FormLabel mb="0">{t('productForm.active')}</FormLabel>
+              <Box dir="ltr"><Switch
                 isChecked={isActive}
                 onChange={() => setIsActive(!isActive)}
-              />
+              /></Box>
             </FormControl>
             
             <FormControl display="flex" alignItems="center">
-              <FormLabel mb="0">Has Variants</FormLabel>
-              <Switch
+              <FormLabel mb="0">{t('productForm.hasVariants')}</FormLabel>
+              <Box dir="ltr"><Switch
                 isChecked={hasVariants}
                 onChange={() => setHasVariants(!hasVariants)}
-              />
+              /></Box>
             </FormControl>
           </SimpleGrid>
 
@@ -591,17 +600,19 @@ const AddProduct = () => {
           {hasVariants && (
             <Box mb={4}>
               <FormControl mb={4}>
-                <FormLabel>Select Variant</FormLabel>
-                <Select
-                  placeholder="Select Variant"
+                <FormLabel>{t('productForm.selectVariant')}</FormLabel>
+                <Box dir="ltr"><Select
+                  placeholder={t('productForm.selectVariant')}
                   onChange={handleVariantSelect}
+                  icon={isRTL ? <ChevronDownIcon style={{ left: 8, right: 'auto', position: 'absolute' }} /> : <ChevronDownIcon />}
+                  textAlign={isRTL ? 'right' : 'left'}
                 >
                   {variants.map((variant) => (
                     <option key={variant.id} value={variant.id}>
                       {variant.name}
                     </option>
                   ))}
-                </Select>
+                </Select></Box>
               </FormControl>
 
               {selectedAttributes.length > 0 && (
@@ -625,7 +636,7 @@ const AddProduct = () => {
                       <CardBody>
                         <SimpleGrid columns={2} spacing={2}>
                           <FormControl isRequired>
-                            <FormLabel>Cost</FormLabel>
+                            <FormLabel>{t('productForm.cost')}</FormLabel>
                             <Input
                               type="number"
                               value={attr.cost}
@@ -639,7 +650,7 @@ const AddProduct = () => {
                             />
                           </FormControl>
                           <FormControl isRequired>
-                            <FormLabel>Price</FormLabel>
+                            <FormLabel>{t('productForm.price')}</FormLabel>
                             <Input
                               type="number"
                               value={attr.price}
@@ -653,7 +664,7 @@ const AddProduct = () => {
                             />
                           </FormControl>
                           <FormControl isRequired>
-                            <FormLabel>Quantity</FormLabel>
+                            <FormLabel>{t('productForm.quantity')}</FormLabel>
                             <Input
                               type="number"
                               value={attr.quantity}
@@ -667,7 +678,7 @@ const AddProduct = () => {
                             />
                           </FormControl>
                           <FormControl>
-                            <FormLabel>Variant Image</FormLabel>
+                            <FormLabel>{t('productForm.variantImage')}</FormLabel>
                             <Input
                               type="file"
                               accept="image/*"
@@ -716,7 +727,7 @@ const AddProduct = () => {
           <Box mb={4}>
             <FormControl isRequired={images.length === 0}>
               <FormLabel>
-                Product Images{' '}
+                {t('productForm.productImages')}
                 {images.length === 0 && <span style={{ color: 'red' }}>*</span>}
               </FormLabel>
               <Box
@@ -732,13 +743,13 @@ const AddProduct = () => {
                 bg={isDragging ? uploadDragBg : uploadBg}
               >
                 <Icon as={FaUpload} w={8} h={8} color="blue.500" mb={2} />
-                <Text>Drag & drop images here or</Text>
+                <Text>{t('productForm.dragDropImages')}</Text>
                 <Button
                   variant="link"
                   color="blue.500"
                   onClick={() => document.getElementById('file-upload').click()}
                 >
-                  Browse Files
+                  {t('productForm.browseFiles')}
                 </Button>
                 <Input
                   id="file-upload"
@@ -775,7 +786,7 @@ const AddProduct = () => {
                         left={2}
                         colorScheme="blue"
                       >
-                        Main
+                        {t('productForm.main')}
                       </Badge>
                     )}
                     <IconButton
@@ -796,15 +807,15 @@ const AddProduct = () => {
           {/* Submit Buttons */}
           <Flex justify="flex-end" gap={4}>
             <Button variant="outline" colorScheme="red" onClick={handleCancel}>
-              Cancel
+              {t('productForm.cancel')}
             </Button>
             <Button type="submit" colorScheme="blue" isLoading={isLoading}>
-              Save Product
+              {t('productForm.saveProduct')}
             </Button>
           </Flex>
         </form>
       </Box>
-    </Flex>
+    </Box>
   );
 };
 

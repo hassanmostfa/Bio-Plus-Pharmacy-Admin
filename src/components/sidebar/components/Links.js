@@ -12,11 +12,13 @@ import {
   Icon,
 } from "@chakra-ui/react";
 import DropdownMenu from "./DropdownMenu ";
+import { useTranslation } from 'react-i18next';
 
 export function SidebarLinks(props) {
   // Chakra color mode
   let location = useLocation();
   const navigate = useNavigate(); // Hook for navigation
+  const { t } = useTranslation();
 
   // Change colors as per your preference
   let activeColor = useColorModeValue("#fffffff", "#F7FAFC"); // Active route color (light/dark mode)
@@ -62,7 +64,7 @@ export function SidebarLinks(props) {
               pt="18px"
               pb="12px"
             >
-              {route.name}
+              {route.name.startsWith('sidebar.') ? t(route.name) : route.name}
             </Text>
             {createLinks(route.items)}
           </React.Fragment>
@@ -88,7 +90,7 @@ export function SidebarLinks(props) {
                     {route.icon}
                   </Box>
                   <Text me="auto" color={textColor} fontWeight="normal">
-                    {route.name}
+                    {route.name.startsWith('sidebar.') ? t(route.name) : route.name}
                   </Text>
                 </Flex>
                 <Box h="36px" w="4px" bg="transparent" borderRadius="5px" />
@@ -130,7 +132,7 @@ export function SidebarLinks(props) {
                         activeRoute(route.path?.toLowerCase()) ? "bold" : "normal"
                       }
                     >
-                      {route.name}
+                      {route.name.startsWith('sidebar.') ? t(route.name) : route.name}
                     </Text>
                   </Flex>
                   <Box
@@ -165,7 +167,7 @@ export function SidebarLinks(props) {
                       activeRoute(route.path?.toLowerCase()) ? "bold" : "normal"
                     }
                   >
-                    {route.name}
+                    {route.name.startsWith('sidebar.') ? t(route.name) : route.name}
                   </Text>
                   <Box h="36px" w="4px" bg="brand.400" borderRadius="5px" />
                 </HStack>

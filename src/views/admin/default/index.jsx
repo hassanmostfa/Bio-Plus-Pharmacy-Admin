@@ -16,20 +16,23 @@ import tableDataCheck from "views/admin/default/variables/tableDataCheck.json";
 
 import { LuShoppingBasket } from "react-icons/lu";
 import { useGetStatsQuery } from "api/pharmacySlice";
+import { useTranslation } from "react-i18next";
+import i18n from "../../../i18n";
 
 export default function UserReports() {
   const brandColor = useColorModeValue("brand.500", "white");
   const boxBg = useColorModeValue("secondaryGray.300", "whiteAlpha.100");
   const { data: stats } = useGetStatsQuery();
+  const { t } = useTranslation();
   
   const cardData = [
-    { name: "Total Orders", value: stats?.data?.totalOrders || 0, icon: MdOutlineShoppingCart },
-    { name: "Total Products", value: stats?.data?.totalProducts || 0, icon: LuShoppingBasket },
-    { name: "Total Prescriptions", value: stats?.data?.totalPrescriptions || 0, icon: MdAssignment },
+    { name: t("dashboard.totalOrders"), value: stats?.data?.totalOrders || 0, icon: MdOutlineShoppingCart },
+    { name: t("dashboard.totalProducts"), value: stats?.data?.totalProducts || 0, icon: LuShoppingBasket },
+    { name: t("dashboard.totalPrescriptions"), value: stats?.data?.totalPrescriptions || 0, icon: MdAssignment },
   ];
 
   return (
-    <Box pt={{ base: "130px", md: "80px", xl: "80px" }}>
+    <Box pt={{ base: "130px", md: "80px", xl: "80px" }} dir={i18n.language === 'ar' ? 'rtl' : 'ltr'}>
       {/* Updated Cards Section */}
       <SimpleGrid columns={{ base: 1, md: 2, xl: 3 }} gap="20px" mb="20px">
         {cardData.map((card, index) => (

@@ -36,11 +36,15 @@ import { useGetProductQuery, useUpdateProductMutation } from 'api/productSlice';
 import Swal from 'sweetalert2';
 import { useAddFileMutation } from 'api/filesSlice';
 import { useGetTypesQuery } from 'api/typeSlice';
+import { useTranslation } from "react-i18next";
+import i18n from "../../../i18n";
 
 const EditProduct = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const toast = useToast();
+  const { t } = useTranslation();
+  const isRTL = i18n.language === 'ar';
 
   // State for form fields
   const [nameEn, setNameEn] = useState('');
@@ -102,6 +106,7 @@ const EditProduct = () => {
   const pharmacies = pharmaciesResponse?.data?.items || [];
   const textColor = useColorModeValue('secondaryGray.900', 'white');
   const [addFile] = useAddFileMutation();
+
   // Initialize form with product data
   useEffect(() => {
     if (product) {
@@ -206,6 +211,7 @@ const EditProduct = () => {
       setMainImageIndex(index + existingImages.length);
     }
   };
+
   const handleRemoveImage = (index, isExisting) => {
     if (isExisting) {
       setExistingImages(existingImages.filter((_, i) => i !== index));
@@ -243,8 +249,10 @@ const EditProduct = () => {
     setIsDragging(false);
     handleImageUpload(e.dataTransfer.files);
   };
+
   // Add this with your other state declarations
   const [selectedAttributes, setSelectedAttributes] = useState([]);
+
   // Variant handling
   const handleVariantSelect = (e) => {
     const variantId = e.target.value;
@@ -397,13 +405,13 @@ const EditProduct = () => {
 
   const handleCancel = () => {
     Swal.fire({
-      title: 'Are you sure?',
-      text: 'You will lose all unsaved changes',
+      title: isRTL ? 'هل أنت متأكد؟' : 'Are you sure?',
+      text: isRTL ? 'سوف تفقد جميع التغييرات غير المحفوظة' : 'You will lose all unsaved changes',
       icon: 'warning',
       showCancelButton: true,
       confirmButtonColor: '#3085d6',
       cancelButtonColor: '#d33',
-      confirmButtonText: 'Yes, discard changes',
+      confirmButtonText: isRTL ? 'نعم، تجاهل التغييرات' : 'Yes, discard changes',
     }).then((result) => {
       if (result.isConfirmed) {
         navigate('/admin/products');
@@ -429,15 +437,15 @@ const EditProduct = () => {
   if (!product) {
     return (
       <Flex justify="center" align="center" minH="100vh">
-        <Text>Product not found</Text>
+        <Text>{isRTL ? 'المنتج غير موجود' : 'Product not found'}</Text>
       </Flex>
     );
   }
 
   return (
-    <Flex direction="column" align="center" w="100%" mt={20}>
-      <Box bg={cardBg} borderRadius="lg" borderWidth="1px" borderColor={borderColor} p={6} w="100%" maxW="1200px">
-        <Flex mb={3} justify="space-between" align="center">
+    <Flex className="container add-admin-container w-100" dir={isRTL ? 'rtl' : 'ltr'}>
+      <Box className="add-admin-card shadow p-4 bg-white w-100">
+        <Flex className="mb-3 d-flex justify-content-between align-items-center">
           <Text
             color={textColor}
             fontSize="22px"
@@ -445,16 +453,17 @@ const EditProduct = () => {
             mb="20px !important"
             lineHeight="100%"
           >
-            Edit Product
+            {isRTL ? 'تعديل المنتج' : 'Edit Product'}
           </Text>
           <Button
             type="button"
             onClick={handleCancel}
             colorScheme="teal"
             size="sm"
-            leftIcon={<IoMdArrowBack />}
+            leftIcon={!isRTL ? <IoMdArrowBack /> : null}
+            rightIcon={isRTL ? <IoMdArrowBack /> : null}
           >
-            Back
+            {isRTL ? 'رجوع' : 'Back'}
           </Button>
         </Flex>
         <form onSubmit={handleSubmit}>
@@ -462,21 +471,20 @@ const EditProduct = () => {
           <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4} mb={4}>
             <Box>
               <FormControl isRequired>
-                <FormLabel>Product Name (English)</FormLabel>
+                <FormLabel>{t('productForm.nameEn')}</FormLabel>
                 <Input
-                  placeholder="Enter Product Name"
+                  placeholder={isRTL ? 'أدخل اسم المنتج بالإنجليزية' : 'Enter Product Name'}
                   value={nameEn}
                   onChange={(e) => setNameEn(e.target.value)}
-                  bg={inputBg}
-                  color={inputTextColor}
+                  dir={isRTL ? 'rtl' : 'ltr'}
                 />
               </FormControl>
             </Box>
             <Box>
               <FormControl>
-                <FormLabel>Product Name (Arabic)</FormLabel>
+                <FormLabel>{t('productForm.nameAr')}</FormLabel>
                 <Input
-                  placeholder="أدخل اسم المنتج"
+                  placeholder={isRTL ? 'أدخل اسم المنتج' : 'Enter Product Name in Arabic'}
                   value={nameAr}
                   onChange={(e) => setNameAr(e.target.value)}
                   dir="rtl"
@@ -490,21 +498,20 @@ const EditProduct = () => {
           <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4} mb={4}>
             <Box>
               <FormControl isRequired>
-                <FormLabel>Description (English)</FormLabel>
+                <FormLabel>{t('productForm.descriptionEn')}</FormLabel>
                 <Textarea
-                  placeholder="Enter Product Description"
+                  placeholder={isRTL ? 'أدخل وصف المنتج بالإنجليزية' : 'Enter Product Description'}
                   value={descriptionEn}
                   onChange={(e) => setDescriptionEn(e.target.value)}
-                  bg={inputBg}
-                  color={inputTextColor}
+                  dir={isRTL ? 'rtl' : 'ltr'}
                 />
               </FormControl>
             </Box>
             <Box>
               <FormControl>
-                <FormLabel>Description (Arabic)</FormLabel>
+                <FormLabel>{t('productForm.descriptionAr')}</FormLabel>
                 <Textarea
-                  placeholder="أدخل وصف المنتج"
+                  placeholder={isRTL ? 'أدخل وصف المنتج' : 'Enter Product Description in Arabic'}
                   value={descriptionAr}
                   onChange={(e) => setDescriptionAr(e.target.value)}
                   dir="rtl"
@@ -519,67 +526,54 @@ const EditProduct = () => {
           <SimpleGrid columns={{ base: 1, md: 3 }} spacing={4} mb={4}>
             <Box>
               <FormControl isRequired>
-                <FormLabel>Category</FormLabel>
-                <Select
-                  placeholder="Select Category"
-                  value={categoryId}
-                  onChange={(e) => setCategoryId(e.target.value)}
-                  bg={inputBg}
-                  color={inputTextColor}
-                >
-                  {categories?.map((cat) => (
-                    <option key={cat.id} value={cat.id}>
-                      {cat.translations?.find((t) => t.languageId === 'en')
-                        ?.name || cat.name}
-                    </option>
-                  ))}
-                </Select>
+                <FormLabel>{t('productForm.category')}</FormLabel>
+                <Box dir="ltr">
+                  <Select
+                    placeholder={isRTL ? 'اختر الفئة' : 'Select Category'}
+                    value={categoryId}
+                    onChange={(e) => setCategoryId(e.target.value)}
+                    
+                  >
+                    {categories?.map((cat) => (
+                      <option key={cat.id} value={cat.id}>
+                        {isRTL 
+                          ? cat.translations?.find((t) => t.languageId === 'ar')?.name || cat.name
+                          : cat.translations?.find((t) => t.languageId === 'en')?.name || cat.name}
+                      </option>
+                    ))}
+                  </Select>
+                </Box>
               </FormControl>
             </Box>
             <Box>
               <FormControl isRequired>
-                <FormLabel>Brand</FormLabel>
-                <Select
-                  placeholder="Select Brand"
-                  value={brandId}
-                  onChange={(e) => setBrandId(e.target.value)}
-                  bg={inputBg}
-                  color={inputTextColor}
-                >
-                  {brands.map((brand) => (
-                    <option key={brand.id} value={brand.id}>
-                      {brand.name}
-                    </option>
-                  ))}
-                </Select>
+                <FormLabel>{t('productForm.brand')}</FormLabel>
+                <Box dir="ltr">
+                  <Select
+                    placeholder={isRTL ? 'اختر الماركة' : 'Select Brand'}
+                    value={brandId}
+                    onChange={(e) => setBrandId(e.target.value)}
+                    
+                  >
+                    {brands.map((brand) => (
+                      <option key={brand.id} value={brand.id}>
+                        {brand.name}
+                      </option>
+                    ))}
+                  </Select>
+                </Box>
               </FormControl>
             </Box>
-            {/* <Box>
-              <FormControl isRequired>
-                <FormLabel>Pharmacy</FormLabel>
-                <Select
-                  placeholder="Select Pharmacy"
-                  value={pharmacyId}
-                  onChange={(e) => setPharmacyId(e.target.value)}
-                >
-                  {pharmacies.map((pharmacy) => (
-                    <option key={pharmacy.id} value={pharmacy.id}>
-                      {pharmacy.name}
-                    </option>
-                  ))}
-                </Select>
-              </FormControl>
-            </Box> */}
 
             <Box>
-                <FormControl>
-                  <FormLabel>Product Type</FormLabel>
+              <FormControl>
+                <FormLabel>{t('productForm.productType')}</FormLabel>
+                <Box dir="ltr">
                   <Select
-                    placeholder="Select Product Type"
+                    placeholder={isRTL ? 'اختر نوع المنتج' : 'Select Product Type'}
                     value={productTypeId}
                     onChange={(e) => setProductTypeId(e.target.value)}
-                    bg={inputBg}
-                    color={inputTextColor}
+                    
                   >
                     {productTypes.map((type) => (
                       <option key={type.id} value={type.id}>
@@ -587,48 +581,46 @@ const EditProduct = () => {
                       </option>
                     ))}
                   </Select>
-                </FormControl>
-              </Box>
+                </Box>
+              </FormControl>
+            </Box>
           </SimpleGrid>
 
           {/* Pricing Information */}
           <SimpleGrid columns={{ base: 1, md: 3 }} spacing={4} mb={4}>
             <Box>
               <FormControl>
-                <FormLabel>Cost</FormLabel>
+                <FormLabel>{t('productForm.cost')}</FormLabel>
                 <Input
                   type="number"
                   placeholder="0.00"
                   value={cost}
                   onChange={(e) => setCost(e.target.value)}
-                  bg={inputBg}
-                  color={inputTextColor}
+                  dir={isRTL ? 'rtl' : 'ltr'}
                 />
               </FormControl>
             </Box>
             <Box>
               <FormControl isRequired>
-                <FormLabel>Price</FormLabel>
+                <FormLabel>{t('productForm.price')}</FormLabel>
                 <Input
                   type="number"
                   placeholder="0.00"
                   value={price}
                   onChange={(e) => setPrice(e.target.value)}
-                  bg={inputBg}
-                  color={inputTextColor}
+                  dir={isRTL ? 'rtl' : 'ltr'}
                 />
               </FormControl>
             </Box>
             <Box>
               <FormControl>
-                <FormLabel>Quantity</FormLabel>
+                <FormLabel>{t('productForm.quantity')}</FormLabel>
                 <Input
                   type="number"
                   placeholder="0"
                   value={quantity}
                   onChange={(e) => setQuantity(e.target.value)}
-                  bg={inputBg}
-                  color={inputTextColor}
+                  dir={isRTL ? 'rtl' : 'ltr'}
                 />
               </FormControl>
             </Box>
@@ -636,7 +628,7 @@ const EditProduct = () => {
 
           {/* Offer Type */}
           <Box mb={4}>
-            <FormLabel>Offer Type</FormLabel>
+            <FormLabel>{t('productForm.offerType')}</FormLabel>
             <RadioGroup
               value={offerType}
               onChange={(value) => {
@@ -646,23 +638,22 @@ const EditProduct = () => {
                 }
               }}
             >
-              <Stack direction="row">
-                <Radio value="MONTHLY_OFFER">Monthly Offer</Radio>
-                <Radio value="NEW_ARRIVAL">New Arrival</Radio>
-                <Radio value="">None</Radio>
+              <Stack direction={isRTL ? 'row-reverse' : 'row'}>
+                <Radio value="MONTHLY_OFFER">{isRTL ? 'عرض شهري' : 'Monthly Offer'}</Radio>
+                <Radio value="NEW_ARRIVAL">{isRTL ? 'وصل حديثاً' : 'New Arrival'}</Radio>
+                <Radio value="">{isRTL ? 'لا يوجد' : 'None'}</Radio>
               </Stack>
             </RadioGroup>
             {offerType === 'MONTHLY_OFFER' && (
               <Box mt={2}>
                 <FormControl>
-                  <FormLabel>Offer Percentage</FormLabel>
+                  <FormLabel>{t('productForm.offerPercentage')}</FormLabel>
                   <Input
                     type="number"
                     placeholder="0.0"
                     value={offerPercentage}
                     onChange={(e) => setOfferPercentage(e.target.value)}
-                    bg={inputBg}
-                    color={inputTextColor}
+                    dir={isRTL ? 'rtl' : 'ltr'}
                   />
                 </FormControl>
               </Box>
@@ -671,26 +662,32 @@ const EditProduct = () => {
 
           {/* Status Switches */}
           <SimpleGrid columns={{ base: 1, md: 3 }} spacing={4} mb={4}>
-            <FormControl display="flex" alignItems="center">
-              <FormLabel mb="0">Has Variants</FormLabel>
-              <Switch
-                isChecked={hasVariants}
-                onChange={() => setHasVariants(!hasVariants)}
-              />
+            <FormControl display="flex" alignItems="center" flexDirection={isRTL ? 'row-reverse' : 'row'}>
+              <FormLabel mb="0" ml={isRTL ? 2 : 3} mr={isRTL ? 3 : 2}>{t('productForm.hasVariants')}</FormLabel>
+              <Box dir="ltr">
+                <Switch
+                  isChecked={hasVariants}
+                  onChange={() => setHasVariants(!hasVariants)}
+                />
+              </Box>
             </FormControl>
-            <FormControl display="flex" alignItems="center">
-              <FormLabel mb="0">Active</FormLabel>
-              <Switch
-                isChecked={isActive}
-                onChange={() => setIsActive(!isActive)}
-              />
+            <FormControl display="flex" alignItems="center" flexDirection={isRTL ? 'row-reverse' : 'row'}>
+              <FormLabel mb="0" ml={isRTL ? 2 : 3} mr={isRTL ? 3 : 2}>{t('productForm.active')}</FormLabel>
+              <Box dir="ltr">
+                <Switch
+                  isChecked={isActive}
+                  onChange={() => setIsActive(!isActive)}
+                />
+              </Box>
             </FormControl>
-            <FormControl display="flex" alignItems="center">
-              <FormLabel mb="0">Published</FormLabel>
-              <Switch
-                isChecked={isPublished}
-                onChange={() => setIsPublished(!isPublished)}
-              />
+            <FormControl display="flex" alignItems="center" flexDirection={isRTL ? 'row-reverse' : 'row'}>
+              <FormLabel mb="0" ml={isRTL ? 2 : 3} mr={isRTL ? 3 : 2}>{t('productForm.published')}</FormLabel>
+              <Box dir="ltr">
+                <Switch
+                  isChecked={isPublished}
+                  onChange={() => setIsPublished(!isPublished)}
+                />
+              </Box>
             </FormControl>
           </SimpleGrid>
 
@@ -698,19 +695,20 @@ const EditProduct = () => {
           {hasVariants && (
             <Box mb={4}>
               <FormControl mb={4}>
-                <FormLabel>Select Variant</FormLabel>
-                <Select
-                  placeholder="Select Variant"
-                  onChange={handleVariantSelect}
-                  bg={inputBg}
-                  color={inputTextColor}
-                >
-                  {variants.map((variant) => (
-                    <option key={variant.id} value={variant.id}>
-                      {variant.name}
-                    </option>
-                  ))}
-                </Select>
+                <FormLabel>{t('productForm.selectVariant')}</FormLabel>
+                <Box dir="ltr">
+                  <Select
+                    placeholder={isRTL ? 'اختر المتغير' : 'Select Variant'}
+                    onChange={handleVariantSelect}
+                    
+                  >
+                    {variants.map((variant) => (
+                      <option key={variant.id} value={variant.id}>
+                        {variant.name}
+                      </option>
+                    ))}
+                  </Select>
+                </Box>
               </FormControl>
 
               {selectedAttributes.length > 0 && (
@@ -718,13 +716,13 @@ const EditProduct = () => {
                   {selectedAttributes.map((attr, index) => (
                     <Card key={index} bg={cardBg} borderColor={borderColor} borderWidth="1px">
                       <CardHeader>
-                        <Flex justify="space-between" align="center">
+                        <Flex justify="space-between" align="center" direction={isRTL ? 'row-reverse' : 'row'}>
                           <Text fontWeight="bold">
                             {attr.variantName} - {attr.attributeValue}
                           </Text>
                           <IconButton
                             icon={<FaTrash />}
-                            aria-label="Delete variant"
+                            aria-label={isRTL ? 'حذف المتغير' : 'Delete variant'}
                             size="sm"
                             colorScheme="red"
                             onClick={() => handleDeleteAttribute(index)}
@@ -734,7 +732,7 @@ const EditProduct = () => {
                       <CardBody>
                         <SimpleGrid columns={2} spacing={2}>
                           <FormControl>
-                            <FormLabel>Cost</FormLabel>
+                            <FormLabel>{t('productForm.cost')}</FormLabel>
                             <Input
                               type="number"
                               value={attr.cost}
@@ -745,12 +743,11 @@ const EditProduct = () => {
                                   e.target.value,
                                 )
                               }
-                              bg={inputBg}
-                              color={inputTextColor}
+                              dir={isRTL ? 'rtl' : 'ltr'}
                             />
                           </FormControl>
                           <FormControl isRequired>
-                            <FormLabel>Price</FormLabel>
+                            <FormLabel>{t('productForm.price')}</FormLabel>
                             <Input
                               type="number"
                               value={attr.price}
@@ -761,12 +758,11 @@ const EditProduct = () => {
                                   e.target.value,
                                 )
                               }
-                              bg={inputBg}
-                              color={inputTextColor}
+                              dir={isRTL ? 'rtl' : 'ltr'}
                             />
                           </FormControl>
                           <FormControl>
-                            <FormLabel>Quantity</FormLabel>
+                            <FormLabel>{t('productForm.quantity')}</FormLabel>
                             <Input
                               type="number"
                               value={attr.quantity}
@@ -777,12 +773,11 @@ const EditProduct = () => {
                                   e.target.value,
                                 )
                               }
-                              bg={inputBg}
-                              color={inputTextColor}
+                              dir={isRTL ? 'rtl' : 'ltr'}
                             />
                           </FormControl>
                           <FormControl>
-                            <FormLabel>Variant Image</FormLabel>
+                            <FormLabel>{t('productForm.variantImage')}</FormLabel>
                             <Input
                               type="file"
                               accept="image/*"
@@ -793,14 +788,13 @@ const EditProduct = () => {
                                   e.target.files[0],
                                 )
                               }
-                              bg={inputBg}
-                              color={inputTextColor}
+                              dir={isRTL ? 'rtl' : 'ltr'}
                             />
                             {attr.image && (
                               <Box mt={2}>
                                 <Image
                                   src={attr.image ? attr.image.name : undefined}
-                                  alt="Selected variant"
+                                  alt={isRTL ? 'المتغير المحدد' : 'Selected variant'}
                                   boxSize="100px"
                                   objectFit="cover"
                                   borderRadius="md"
@@ -820,7 +814,7 @@ const EditProduct = () => {
           {/* Product Images */}
           <Box mb={4}>
             <FormControl>
-              <FormLabel>Product Images</FormLabel>
+              <FormLabel>{t('productForm.productImages')}</FormLabel>
               <Box
                 border="1px dashed"
                 borderColor={isDragging ? 'blue.500' : borderColor}
@@ -834,13 +828,13 @@ const EditProduct = () => {
                 bg={isDragging ? uploadDragBg : uploadBg}
               >
                 <Icon as={FaUpload} w={8} h={8} color="blue.500" mb={2} />
-                <Text>Drag & drop images here or</Text>
+                <Text>{t('productForm.dragDropImages')}</Text>
                 <Button
                   variant="link"
                   color="blue.500"
                   onClick={() => document.getElementById('file-upload').click()}
                 >
-                  Browse Files
+                  {t('productForm.browseFiles')}
                 </Button>
                 <Input
                   id="file-upload"
@@ -873,20 +867,22 @@ const EditProduct = () => {
                       <Badge
                         position="absolute"
                         top={2}
-                        left={2}
+                        left={isRTL ? 'auto' : 2}
+                        right={isRTL ? 2 : 'auto'}
                         colorScheme="blue"
                       >
-                        Main
+                        {t('productForm.main')}
                       </Badge>
                     )}
                     <IconButton
                       icon={<FaTrash />}
-                      aria-label="Remove image"
+                      aria-label={isRTL ? 'إزالة الصورة' : 'Remove image'}
                       size="sm"
                       colorScheme="red"
                       position="absolute"
                       top={2}
-                      right={2}
+                      left={isRTL ? 2 : 'auto'}
+                      right={isRTL ? 'auto' : 2}
                       onClick={() => handleRemoveImage(index, true)}
                     />
                   </Box>
@@ -916,20 +912,22 @@ const EditProduct = () => {
                         <Badge
                           position="absolute"
                           top={2}
-                          left={2}
+                          left={isRTL ? 'auto' : 2}
+                          right={isRTL ? 2 : 'auto'}
                           colorScheme="blue"
                         >
-                          Main
+                          {t('productForm.main')}
                         </Badge>
                       )}
                       <IconButton
                         icon={<FaTrash />}
-                        aria-label="Remove image"
+                        aria-label={isRTL ? 'إزالة الصورة' : 'Remove image'}
                         size="sm"
                         colorScheme="red"
                         position="absolute"
                         top={2}
-                        right={2}
+                        left={isRTL ? 2 : 'auto'}
+                        right={isRTL ? 'auto' : 2}
                         onClick={() => handleRemoveImage(globalIndex, false)}
                       />
                     </Box>
@@ -942,10 +940,10 @@ const EditProduct = () => {
           {/* Submit Buttons */}
           <Flex justify="flex-end" gap={4}>
             <Button variant="outline" colorScheme="red" onClick={handleCancel}>
-              Cancel
+              {isRTL ? 'إلغاء' : 'Cancel'}
             </Button>
             <Button type="submit" colorScheme="blue" isLoading={isUpdating}>
-              Update Product
+              {isRTL ? 'تحديث المنتج' : 'Update Product'}
             </Button>
           </Flex>
         </form>

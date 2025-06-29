@@ -24,8 +24,12 @@ import { useLoginUserMutation } from "api/userSlice";
 import Swal from "sweetalert2";
 import { LanguageContext } from "../../../components/auth/LanguageContext"; // Adjust the path accordingly
 import Logo from "../../../assets/img/bio-logo.png";
+import { useTranslation } from "react-i18next";
+import i18n from "../../../i18n";
+
 function SignIn() {
   const { language, toggleLanguage } = useContext(LanguageContext);
+  const { t } = useTranslation();
   const textColor = useColorModeValue("navy.700", "white");
   const textColorSecondary = "gray.400";
   const brandStars = useColorModeValue("brand.500", "brand.400");
@@ -36,24 +40,12 @@ function SignIn() {
   const [loginUser, { isError, error: apiError }] = useLoginUserMutation();
   const [show, setShow] = useState(false);
 
-  const translations = {
-    en: {
-      welcome: "Welcome Back!",
-      enterDetails: "Please enter your login details",
-      email: "Email",
-      password: "Password",
-      rememberMe: "Remember Me",
-      signIn: "Log in",
-    },
-    ar: {
-      welcome: "مرحبًا بعودتك!",
-      enterDetails: "أدخل بريدك الإلكتروني وكلمة المرور لتسجيل الدخول!",
-      email: "البريد الإلكتروني",
-      password: "كلمة المرور",
-      rememberMe: "تذكرني لاحقا",
-      signIn: "تسجيل الدخول",
-    },
-  };
+  // Sync i18next language with context
+  React.useEffect(() => {
+    if (i18n.language !== language) {
+      i18n.changeLanguage(language);
+    }
+  }, [language]);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -97,28 +89,28 @@ function SignIn() {
         mb={{ base: "30px", md: "30px" }}
         px={{ base: "25px", md: "0px" }}
         flexDirection="column"
-        dir={language === "ar" ? "rtl" : "ltr"} // Set direction based on language
+        dir={i18n.language === "ar" ? "rtl" : "ltr"} // Set direction based on i18n
       >
         <Box me="auto">
           <Flex mb="40px" justifyContent="center">
             <Image src={Logo} w="150px" />
           </Flex>
           <Flex gap={40}>
-          <Heading color={textColor} fontSize="36px" mb="10px">
-            {translations[language].welcome}
-          </Heading>
+            <Heading color={textColor} fontSize="36px" mb="10px">
+              {t("welcome")}
+            </Heading>
 
-          <Button
-          onClick={toggleLanguage}
-          variant='darkBrand'
-          color='white'
-          fontSize='lg'
-          fontWeight='500'
-          borderRadius='70px'
-          mb="20px">
-          {language === "en" ? "العربية" : "English"}
-        </Button>
-
+            <Button
+              onClick={toggleLanguage}
+              variant="darkBrand"
+              color="white"
+              fontSize="lg"
+              fontWeight="500"
+              borderRadius="70px"
+              mb="20px"
+            >
+              {i18n.language === "en" ? "العربية" : "English"}
+            </Button>
           </Flex>
           <Text
             mb="50px"
@@ -127,7 +119,7 @@ function SignIn() {
             fontWeight="400"
             fontSize="md"
           >
-            {translations[language].enterDetails}
+            {t("enterDetails")}
           </Text>
         </Box>
         <form onSubmit={handleSubmit}>
@@ -152,7 +144,7 @@ function SignIn() {
                 mb="8px"
                 mt={"30px"}
               >
-                {translations[language].email}
+                {t("email")}
                 <Text color={brandStars}>*</Text>
               </FormLabel>
               <Input
@@ -170,7 +162,6 @@ function SignIn() {
                 onChange={handleChange}
               />
 
-
               <FormLabel
                 ms="4px"
                 fontSize="sm"
@@ -178,7 +169,7 @@ function SignIn() {
                 color={textColor}
                 display="flex"
               >
-                {translations[language].password}
+                {t("password")}
                 <Text color={brandStars}>*</Text>
               </FormLabel>
               <InputGroup size="md" mb="20px">
@@ -217,7 +208,7 @@ function SignIn() {
                     color={textColor}
                     fontSize="sm"
                   >
-                    {translations[language].rememberMe}
+                    {t("rememberMe")}
                   </FormLabel>
                 </FormControl>
               </Flex>
@@ -230,7 +221,7 @@ function SignIn() {
                 mb="30px"
                 type="submit"
               >
-                {translations[language].signIn}
+                {t("signIn")}
               </Button>
             </FormControl>
           </Flex>

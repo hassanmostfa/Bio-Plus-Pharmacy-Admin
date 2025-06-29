@@ -2,6 +2,8 @@ import React, { useEffect, useState } from "react";
 import { Button, Input, Text, useColorModeValue, Spinner, Box } from "@chakra-ui/react";
 import Swal from "sweetalert2";
 import { useUpdatePharmacyMutation, useGetPharmacyQuery } from "api/pharmacySlice";
+import { useTranslation } from 'react-i18next';
+import i18n from '../../../i18n';
 
 const DeliveryFees = () => {
   const [updatePharmacy, { isLoading: isUpdatingPharmacy }] = useUpdatePharmacyMutation();
@@ -9,6 +11,8 @@ const DeliveryFees = () => {
   const pharmacy = localStorage.getItem('pharmacy');
   const pharmacyId = pharmacy ? JSON.parse(pharmacy).id : null;
   const { data: pharmacyData, isLoading: isFetching, error: fetchError } = useGetPharmacyQuery(pharmacyId);
+  const { t } = useTranslation();
+  const isRTL = i18n.language === 'ar';
 
   const [deliveryFee, setDeliveryFee] = useState("");
 
@@ -45,24 +49,24 @@ const DeliveryFees = () => {
   };
 
   if (isFetching) return <Spinner color="blue.500" size="xl" />;
-  if (fetchError) return <Text color="red.500">Failed to load pharmacy data. Please try again.</Text>;
+  if (fetchError) return <Text color="red.500">{t('deliveryFees.failedToLoad')}</Text>;
 
   return (
-    <div className="container w-100">
-      <Box bg={cardBg} borderRadius="lg" borderWidth="1px" borderColor={borderColor} p={6} w="100%" mx="auto">
+    <div className="container add-admin-container w-100" dir={isRTL ? 'rtl' : 'ltr'}>
+      <Box className="add-admin-card shadow p-4 bg-white w-100">
         <Text color={textColor} fontSize="22px" fontWeight="700" mb="20px !important" lineHeight="100%">
-          Delivery Fee Settings
+          {t('deliveryFees.title')}
         </Text>
         <form onSubmit={handleSubmit}>
           <div className="mb-3">
             <Text color={textColor} fontSize="sm" fontWeight="700">
-              Delivery Fee
-              <span style={{ color: 'red', marginLeft: 4 }}>*</span>
+              {t('deliveryFees.deliveryFee')}
+              <span className="text-danger mx-1">*</span>
             </Text>
             <Input
               type="number"
               name="deliveryFee"
-              placeholder="Enter delivery fee amount"
+              placeholder={t('deliveryFees.enterDeliveryFee')}
               value={deliveryFee}
               onChange={handleInputChange}
               required
@@ -84,10 +88,11 @@ const DeliveryFees = () => {
             mt="30px"
             isLoading={isUpdatingPharmacy}
           >
-            Save
+            {t('deliveryFees.save')}
           </Button>
         </form>
       </Box>
+      
     </div>
   );
 };

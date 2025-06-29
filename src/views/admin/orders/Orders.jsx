@@ -44,6 +44,8 @@ import { useGetOrdersQuery } from 'api/orderSlice';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
+import { useTranslation } from "react-i18next";
+import i18n from "../../../i18n";
 
 const columnHelper = createColumnHelper();
 
@@ -242,6 +244,10 @@ const Orders = () => {
   const textColor = useColorModeValue('secondaryGray.900', 'white');
   const borderColor = useColorModeValue('gray.200', 'whiteAlpha.100');
 
+  const { t } = useTranslation();
+  const isRTL = i18n.language === 'ar';
+
+  // Move columns definition here, after t is initialized
   const columns = [
     columnHelper.accessor('id', {
       header: '',
@@ -254,27 +260,27 @@ const Orders = () => {
       ),
     }),
     columnHelper.accessor('orderNumber', {
-      header: 'Order #',
+      header: t('orders.orderNumber'),
       cell: (info) => <Text color={textColor} fontWeight="bold">{info.getValue()}</Text>,
     }),
     columnHelper.accessor('createdAt', {
-      header: 'Date',
+      header: t('orders.date'),
       cell: (info) => <Text color={textColor}>{formatDate(info.getValue())}</Text>,
     }),
     columnHelper.accessor('user.name', {
-      header: 'Customer',
+      header: t('orders.customer'),
       cell: (info) => <Text color={textColor}>{info.getValue() || 'N/A'}</Text>,
     }),
     columnHelper.accessor('user.phoneNumber', {
-      header: 'Phone',
+      header: t('orders.phone'),
       cell: (info) => <Text color={textColor}>{info.getValue() || 'N/A'}</Text>,
     }),
     columnHelper.accessor('pharmacy.name', {
-      header: 'Pharmacy',
+      header: t('orders.pharmacy'),
       cell: (info) => <Text color={textColor}>{info.getValue() || 'N/A'}</Text>,
     }),
     columnHelper.accessor('status', {
-      header: 'Status',
+      header: t('orders.status'),
       cell: (info) => (
         <Badge
           colorScheme={
@@ -290,7 +296,7 @@ const Orders = () => {
       ),
     }),
     columnHelper.accessor('paymentMethod', {
-      header: 'Payment',
+      header: t('orders.payment'),
       cell: (info) => (
         <Badge
           colorScheme={info.getValue() === 'PAID' ? 'green' : 'orange'}
@@ -303,11 +309,11 @@ const Orders = () => {
       ),
     }),
     columnHelper.accessor('total', {
-      header: 'Total',
+      header: t('orders.total'),
       cell: (info) => <Text color={textColor} fontWeight="bold">{info.getValue()}</Text>,
     }),
     columnHelper.accessor('actions', {
-      header: 'Actions',
+      header: t('orders.actions'),
       cell: (info) => (
         <Icon
           w="18px"
@@ -333,10 +339,10 @@ const Orders = () => {
   });
 
   return (
-    <div className="container">
-      <Card flexDirection="column" w="100%" px="0px" overflowX={{ sm: 'scroll', lg: 'hidden' }}>
+    <Box dir={isRTL ? 'rtl' : 'ltr'} >
+      <Card flexDirection="column" w="100%" px="0px" overflowX={{ sm: 'scroll', lg: 'hidden' }} mt={'100px'}>
         <Flex px="25px" mb="8px" justifyContent="space-between" align="center">
-          <Text color={textColor} fontSize="22px" fontWeight="700">All Orders</Text>
+          <Text color={textColor} fontSize="22px" fontWeight="700">{t('orders.allOrders')}</Text>
           <Box display="flex" gap="10px">
             <Button
               variant="darkBrand"
@@ -349,7 +355,7 @@ const Orders = () => {
               onClick={handleExportPDF}
               leftIcon={<FaFilePdf />}
             >
-              Export PDF
+              {t('orders.exportPDF')}
             </Button>
             <Button
               variant="darkBrand"
@@ -362,7 +368,7 @@ const Orders = () => {
               onClick={handleExportExcel}
               leftIcon={<FaFileExcel />}
             >
-              Export Excel
+              {t('orders.exportExcel')}
             </Button>
             <Button
               variant="darkBrand"
@@ -376,7 +382,7 @@ const Orders = () => {
               onClick={handlePrintSelectedOrders}
               leftIcon={<IoMdPrint />}
             >
-              Print Selected
+              {t('orders.printSelected')}
             </Button>
           </Box>
         </Flex>
@@ -421,9 +427,7 @@ const Orders = () => {
         {/* Date Range Filter */}
         <Flex mb="20px" mx="20px" wrap="wrap" justifyContent="space-around" alignItems="center" gap="10px">
           <Box>
-            <Text color={textColor} mb="10px" fontWeight="bold" fontSize="sm">
-              From Date
-            </Text>
+            <Text color={textColor} mb="10px" fontWeight="bold" fontSize="sm">{t('orders.fromDate')}</Text>
             <Input
               type="date"
               value={filters.startDate}
@@ -436,9 +440,7 @@ const Orders = () => {
             />
           </Box>
           <Box>
-            <Text color={textColor} mb="10px" fontWeight="bold" fontSize="sm">
-              To Date
-            </Text>
+            <Text color={textColor} mb="10px" fontWeight="bold" fontSize="sm">{t('orders.toDate')}</Text>
             <Input
               type="date"
               value={filters.endDate}
@@ -461,7 +463,7 @@ const Orders = () => {
               px="24px"
               py="5px"
             >
-              Apply Filters
+              {t('orders.applyFilters')}
             </Button>
             <Button
               onClick={resetFilters}
@@ -473,7 +475,7 @@ const Orders = () => {
               px="24px"
               py="5px"
             >
-              Reset Filters
+              {t('orders.resetFilters')}
             </Button>
           </Flex>
         </Flex>
@@ -529,7 +531,7 @@ const Orders = () => {
               ) : (
                 <Tr>
                   <Td colSpan={columns.length} textAlign="center" py="40px">
-                    <Text color={textColor}>No orders found</Text>
+                    <Text color={textColor}>{t('orders.noOrdersFound')}</Text>
                   </Td>
                 </Tr>
               )}
@@ -540,7 +542,7 @@ const Orders = () => {
         {/* Pagination */}
         <Flex justifyContent="space-between" alignItems="center" px="25px" py="10px">
           <Text color={textColor}>
-            Showing {orders.length} of {totalItems} orders
+            {t('orders.showing')} {orders.length} {t('orders.of')} {totalItems} {t('orders.orders')}
           </Text>
           <Flex gap="10px">
             <Button
@@ -549,10 +551,10 @@ const Orders = () => {
               variant="outline"
               size="sm"
             >
-              Previous
+              {t('orders.previous')}
             </Button>
             <Text color={textColor} px="10px" display="flex" alignItems="center">
-              Page {pagination.page} of {totalPages}
+              {t('orders.page')} {pagination.page} {t('orders.of')} {totalPages}
             </Text>
             <Button
               onClick={() => setPagination(prev => ({ ...prev, page: prev.page + 1 }))}
@@ -560,7 +562,7 @@ const Orders = () => {
               variant="outline"
               size="sm"
             >
-              Next
+              {t('orders.next')}
             </Button>
           </Flex>
         </Flex>
@@ -570,22 +572,22 @@ const Orders = () => {
       <Modal isOpen={isOpen} onClose={onClose} size="xl">
         <ModalOverlay />
         <ModalContent>
-          <ModalHeader>Order Details</ModalHeader>
+          <ModalHeader>{t('orders.orderDetails')}</ModalHeader>
           <ModalCloseButton />
           <ModalBody>
             {selectedOrder && (
               <Box>
                 <Flex justifyContent="space-between" mb="20px">
                   <Box>
-                    <Text fontSize="sm" color="gray.500">Order Number</Text>
+                    <Text fontSize="sm" color="gray.500">{t('orders.orderNumber')}</Text>
                     <Text fontWeight="bold">{selectedOrder.orderNumber}</Text>
                   </Box>
                   <Box>
-                    <Text fontSize="sm" color="gray.500">Date</Text>
+                    <Text fontSize="sm" color="gray.500">{t('orders.date')}</Text>
                     <Text>{formatDate(selectedOrder.createdAt)}</Text>
                   </Box>
                   <Box>
-                    <Text fontSize="sm" color="gray.500">Status</Text>
+                    <Text fontSize="sm" color="gray.500">{t('orders.status')}</Text>
                     <Badge
                       colorScheme={
                         selectedOrder.status === 'PENDING' ? 'yellow' :
@@ -602,19 +604,19 @@ const Orders = () => {
 
                 <Flex justifyContent="space-between" mb="20px">
                   <Box>
-                    <Text fontSize="sm" color="gray.500">Customer</Text>
+                    <Text fontSize="sm" color="gray.500">{t('orders.customer')}</Text>
                     <Text>{selectedOrder.user?.name || 'N/A'}</Text>
                     <Text>{selectedOrder.user?.phoneNumber || 'N/A'}</Text>
                   </Box>
                   <Box>
-                    <Text fontSize="sm" color="gray.500">Pharmacy</Text>
+                    <Text fontSize="sm" color="gray.500">{t('orders.pharmacy')}</Text>
                     <Text>{selectedOrder.pharmacy?.name || 'N/A'}</Text>
                   </Box>
                   <Box>
-                    <Text fontSize="sm" color="gray.500">Payment</Text>
+                    <Text fontSize="sm" color="gray.500">{t('orders.payment')}</Text>
                     <Text>{selectedOrder.paymentMethod}</Text>
                     <Badge
-                      colorScheme={selectedOrder.paymentStatus === 'PAID' ? 'green' : 'orange'}
+                      colorScheme={selectedOrder.paymentStatus === 'green' ? 'green' : 'orange'}
                       px="10px"
                       py="2px"
                       borderRadius="8px"
@@ -625,7 +627,7 @@ const Orders = () => {
                 </Flex>
 
                 <Box mb="20px">
-                  <Text fontSize="sm" color="gray.500">Address</Text>
+                  <Text fontSize="sm" color="gray.500">{t('orders.address')}</Text>
                   {selectedOrder.address ? (
                     <Text>
                       {selectedOrder.address.buildingNo} {selectedOrder.address.street}, 
@@ -637,7 +639,7 @@ const Orders = () => {
                 </Box>
 
                 <Box mb="20px">
-                  <Text fontSize="lg" fontWeight="bold" mb="10px">Items</Text>
+                  <Text fontSize="lg" fontWeight="bold" mb="10px">{t('orders.items')}</Text>
                   {selectedOrder.items?.map((item) => (
                     <Flex key={item.id} mb="10px" p="10px" borderBottom="1px solid" borderColor="gray.200">
                       <Image
@@ -670,11 +672,11 @@ const Orders = () => {
             )}
           </ModalBody>
           <ModalFooter>
-            <Button onClick={onClose}>Close</Button>
+            <Button onClick={onClose}>{t('orders.close')}</Button>
           </ModalFooter>
         </ModalContent>
       </Modal>
-    </div>
+    </Box>
   );
 };
 
