@@ -447,7 +447,7 @@ const EditProduct = () => {
 
   return (
     <Flex className="container add-admin-container w-100" dir={isRTL ? 'rtl' : 'ltr'}>
-      <Box className="add-admin-card shadow p-4 bg-white w-100">
+      <Box bg={inputBg} className="add-admin-card shadow p-4 w-100">
         <Flex className="mb-3 d-flex justify-content-between align-items-center">
           <Text
             color={textColor}
@@ -480,6 +480,8 @@ const EditProduct = () => {
                   value={nameEn}
                   onChange={(e) => setNameEn(e.target.value)}
                   dir={isRTL ? 'rtl' : 'ltr'}
+                  bg={inputBg}
+                  color={inputTextColor}
                 />
               </FormControl>
             </Box>
@@ -507,6 +509,8 @@ const EditProduct = () => {
                   value={descriptionEn}
                   onChange={(e) => setDescriptionEn(e.target.value)}
                   dir={isRTL ? 'rtl' : 'ltr'}
+                  bg={inputBg}
+                  color={inputTextColor}
                 />
               </FormControl>
             </Box>
@@ -535,7 +539,8 @@ const EditProduct = () => {
                     placeholder={isRTL ? 'اختر الفئة' : 'Select Category'}
                     value={categoryId}
                     onChange={(e) => setCategoryId(e.target.value)}
-                    
+                    bg={inputBg}
+                    color={inputTextColor}
                   >
                     {categories?.map((cat) => (
                       <option key={cat.id} value={cat.id}>
@@ -556,7 +561,8 @@ const EditProduct = () => {
                     placeholder={isRTL ? 'اختر الماركة' : 'Select Brand'}
                     value={brandId}
                     onChange={(e) => setBrandId(e.target.value)}
-                    
+                    bg={inputBg}
+                    color={inputTextColor}
                   >
                     {brands.map((brand) => (
                       <option key={brand.id} value={brand.id}>
@@ -576,7 +582,8 @@ const EditProduct = () => {
                     placeholder={isRTL ? 'اختر نوع المنتج' : 'Select Product Type'}
                     value={productTypeId}
                     onChange={(e) => setProductTypeId(e.target.value)}
-                    
+                    bg={inputBg}
+                    color={inputTextColor}
                   >
                     {productTypes.map((type) => (
                       <option key={type.id} value={type.id}>
@@ -600,6 +607,8 @@ const EditProduct = () => {
                   value={cost}
                   onChange={(e) => setCost(e.target.value)}
                   dir={isRTL ? 'rtl' : 'ltr'}
+                  bg={inputBg}
+                  color={inputTextColor}
                 />
               </FormControl>
             </Box>
@@ -612,6 +621,8 @@ const EditProduct = () => {
                   value={price}
                   onChange={(e) => setPrice(e.target.value)}
                   dir={isRTL ? 'rtl' : 'ltr'}
+                  bg={inputBg}
+                  color={inputTextColor}
                 />
               </FormControl>
             </Box>
@@ -624,6 +635,8 @@ const EditProduct = () => {
                   value={quantity}
                   onChange={(e) => setQuantity(e.target.value)}
                   dir={isRTL ? 'rtl' : 'ltr'}
+                  bg={inputBg}
+                  color={inputTextColor}
                 />
               </FormControl>
             </Box>
@@ -633,10 +646,12 @@ const EditProduct = () => {
                 <FormLabel>{t('productForm.sku')}</FormLabel>
                 <Input
                   type="text"
-                  placeholder="0"
+                  placeholder={isRTL ? 'أدخل رمز المنتج (أرقام وحروف)' : 'Enter SKU (numbers and letters)'}
                   value={sku}
                   onChange={(e) => setSku(e.target.value)}
                   dir={isRTL ? 'rtl' : 'ltr'}
+                  bg={inputBg}
+                  color={inputTextColor}
                 />
               </FormControl>
             </Box>
@@ -670,6 +685,8 @@ const EditProduct = () => {
                     value={offerPercentage}
                     onChange={(e) => setOfferPercentage(e.target.value)}
                     dir={isRTL ? 'rtl' : 'ltr'}
+                    bg={inputBg}
+                    color={inputTextColor}
                   />
                 </FormControl>
               </Box>
@@ -716,7 +733,8 @@ const EditProduct = () => {
                   <Select
                     placeholder={isRTL ? 'اختر المتغير' : 'Select Variant'}
                     onChange={handleVariantSelect}
-                    
+                    bg={inputBg}
+                    color={inputTextColor}
                   >
                     {variants.map((variant) => (
                       <option key={variant.id} value={variant.id}>
@@ -760,6 +778,8 @@ const EditProduct = () => {
                                 )
                               }
                               dir={isRTL ? 'rtl' : 'ltr'}
+                              bg={inputBg}
+                              color={inputTextColor}
                             />
                           </FormControl>
                           <FormControl isRequired>
@@ -775,6 +795,8 @@ const EditProduct = () => {
                                 )
                               }
                               dir={isRTL ? 'rtl' : 'ltr'}
+                              bg={inputBg}
+                              color={inputTextColor}
                             />
                           </FormControl>
                           <FormControl>
@@ -790,6 +812,8 @@ const EditProduct = () => {
                                 )
                               }
                               dir={isRTL ? 'rtl' : 'ltr'}
+                              bg={inputBg}
+                              color={inputTextColor}
                             />
                           </FormControl>
                           <FormControl>
@@ -805,6 +829,8 @@ const EditProduct = () => {
                                 )
                               }
                               dir={isRTL ? 'rtl' : 'ltr'}
+                              bg={inputBg}
+                              color={inputTextColor}
                             />
                             {attr.image && (
                               <Box mt={2}>

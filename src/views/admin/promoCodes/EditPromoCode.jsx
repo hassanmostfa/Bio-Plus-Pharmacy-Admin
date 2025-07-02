@@ -29,6 +29,12 @@ const EditPromoCode = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const textColor = useColorModeValue('secondaryGray.900', 'white');
+  const cardBg = useColorModeValue('white', 'gray.700');
+  const inputBg = useColorModeValue('gray.100', 'gray.700');
+  const borderColor = useColorModeValue('gray.200', 'whiteAlpha.100');
+  const inputTextColor = useColorModeValue(undefined, 'white');
+  const hoverBg = useColorModeValue('gray.200', 'gray.600');
+  const selectedBg = useColorModeValue('blue.100', 'blue.600');
   const { t } = useTranslation();
   const isRTL = i18n.language === 'ar';
   
@@ -132,7 +138,7 @@ const EditPromoCode = () => {
 
   return (
     <div className="container add-promo-container w-100" dir={isRTL ? 'rtl' : 'ltr'}>
-      <div className="add-promo-card shadow p-4 bg-white w-100" style={{ borderRadius: '15px' }}>
+      <div className="add-promo-card shadow p-4 w-100" style={{ borderRadius: '15px', backgroundColor: cardBg, borderColor: borderColor, borderWidth: '1px' }}>
         <div className="mb-3 d-flex justify-content-between align-items-center">
           <Text color={textColor} fontSize="22px" fontWeight="700">
             {t('promocode.editPromoCode')} {promoCode.code}
@@ -163,6 +169,8 @@ const EditPromoCode = () => {
                 onChange={handleInputChange}
                 required
                 mt={'8px'}
+                bg={inputBg}
+                color={inputTextColor}
               />
             </FormControl>
 
@@ -179,6 +187,8 @@ const EditPromoCode = () => {
                 onChange={handleInputChange}
                 required
                 mt={'8px'}
+                bg={inputBg}
+                color={inputTextColor}
               />
             </FormControl>
 
@@ -193,25 +203,28 @@ const EditPromoCode = () => {
                   as={Button}
                   rightIcon={<ChevronDownIcon />}
                   width="100%"
-                  bg="white"
-                  border="1px solid #ddd"
+                  bg={inputBg}
+                  color={inputTextColor}
+                  border={`1px solid ${borderColor}`}
                   borderRadius="md"
-                  _hover={{ bg: 'gray.200' }}
+                  _hover={{ bg: hoverBg }}
                   textAlign="left"
                   mt={'8px'}
                 >
                   {formData.type === 'FIXED' ? 'Fixed Amount' : 'Percentage'}
                 </MenuButton>
-                <MenuList width="100%">
+                <MenuList width="100%" bg={inputBg}>
                   <MenuItem
                     onClick={() => handleSelectType('FIXED')}
-                    bg={formData.type === 'FIXED' ? 'blue.100' : 'white'}
+                    bg={formData.type === 'FIXED' ? selectedBg : inputBg}
+                    color={inputTextColor}
                   >
                     Fixed Amount
                   </MenuItem>
                   <MenuItem
                     onClick={() => handleSelectType('PERCENTAGE')}
-                    bg={formData.type === 'PERCENTAGE' ? 'blue.100' : 'white'}
+                    bg={formData.type === 'PERCENTAGE' ? selectedBg : inputBg}
+                    color={inputTextColor}
                   >
                     Percentage
                   </MenuItem>
@@ -253,6 +266,8 @@ const EditPromoCode = () => {
                 required
                 mt={'8px'}
                 min={new Date().toISOString().split('T')[0]}
+                bg={inputBg}
+                color={inputTextColor}
               />
             </FormControl>
 
@@ -270,6 +285,8 @@ const EditPromoCode = () => {
                 required
                 mt={'8px'}
                 min="1"
+                bg={inputBg}
+                color={inputTextColor}
               />
             </FormControl>
             <FormControl>
@@ -282,25 +299,28 @@ const EditPromoCode = () => {
                   as={Button}
                   rightIcon={<ChevronDownIcon />}
                   width="100%"
-                  bg="white"
-                  border="1px solid #ddd"
+                  bg={inputBg}
+                  color={inputTextColor}
+                  border={`1px solid ${borderColor}`}
                   borderRadius="md"
-                  _hover={{ bg: 'gray.200' }}
+                  _hover={{ bg: hoverBg }}
                   textAlign="left"
                   mt={'8px'}
                 >
                   {formData.isActive == true ? 'Active' : 'InActive'}
                 </MenuButton>
-                <MenuList width="100%">
+                <MenuList width="100%" bg={inputBg}>
                   <MenuItem
                     onClick={() => handleSelectStatus(true)}
-                    bg={formData.isActive == 'false' ? 'blue.100' : 'white'}
+                    bg={formData.isActive == 'false' ? selectedBg : inputBg}
+                    color={inputTextColor}
                   >
                     Active
                   </MenuItem>
                   <MenuItem
                     onClick={() => handleSelectStatus(false)}
-                    bg={formData.isActive == 'true' ? 'blue.100' : 'white'}
+                    bg={formData.isActive == 'true' ? selectedBg : inputBg}
+                    color={inputTextColor}
                   >
                     InActive
                   </MenuItem>

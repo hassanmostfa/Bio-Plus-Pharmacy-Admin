@@ -16,7 +16,7 @@ const DeliveryFees = () => {
 
   const [deliveryFee, setDeliveryFee] = useState("");
 
-  const cardBg = useColorModeValue('white', 'navy.700');
+  const cardBg = useColorModeValue('white', 'gray.700');
   const inputBg = useColorModeValue('gray.100', 'gray.700');
   const borderColor = useColorModeValue('gray.200', 'whiteAlpha.100');
   const inputTextColor = useColorModeValue(undefined, 'white');
@@ -53,7 +53,7 @@ const DeliveryFees = () => {
 
   return (
     <div className="container add-admin-container w-100" dir={isRTL ? 'rtl' : 'ltr'}>
-      <Box className="add-admin-card shadow p-4 bg-white w-100">
+      <Box bg={cardBg} className="add-admin-card shadow p-4 w-100" borderColor={borderColor} borderWidth="1px">
         <Text color={textColor} fontSize="22px" fontWeight="700" mb="20px !important" lineHeight="100%">
           {t('deliveryFees.title')}
         </Text>

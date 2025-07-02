@@ -51,6 +51,7 @@ const AddProduct = () => {
   const [cost, setCost] = useState('');
   const [price, setPrice] = useState('');
   const [quantity, setQuantity] = useState('');
+  const [sku, setSku] = useState('');
   const [offerType, setOfferType] = useState('');
   const [offerPercentage, setOfferPercentage] = useState(null);
   const [hasVariants, setHasVariants] = useState(false);
@@ -91,6 +92,8 @@ const AddProduct = () => {
   const borderColor = useColorModeValue('gray.200', 'whiteAlpha.100');
   const uploadBg = useColorModeValue('gray.100', 'gray.700');
   const uploadDragBg = useColorModeValue('blue.50', 'brand.900');
+  const inputBg = useColorModeValue('gray.100', 'gray.700');
+  const inputTextColor = useColorModeValue(undefined, 'white');
   const [addFile] = useAddFileMutation();
 
   const { t } = useTranslation();
@@ -287,13 +290,16 @@ const AddProduct = () => {
         productTypeId: productTypeId || undefined, // Add product type to the request
         cost: cost === null ? undefined : parseFloat(cost),
         price: parseFloat(price),
+        sku: sku || undefined,
         quantity: quantity === null ? undefined : parseInt(quantity),
         offerType:
-          offerType === null
+          offerType === null || offerType === ''
             ? undefined
             : offerType.toUpperCase().replace(' ', '_'),
         offerPercentage:
-          offerPercentage != null ? parseFloat(offerPercentage) : null,
+          offerType === null || offerType === '' || offerPercentage == null 
+            ? undefined 
+            : parseFloat(offerPercentage),
         hasVariants,
         isActive,
         isPublished,
@@ -350,9 +356,9 @@ const AddProduct = () => {
   };
 
   return (
-    <Box className="container add-admin-container w-100" dir={isRTL ? 'rtl' : 'ltr'}>
-      <Box className="add-admin-card shadow p-4 bg-white w-100">
-        <Flex className="mb-3 d-flex justify-content-between align-items-center">
+    <Box bg={inputBg} className="container add-admin-container w-100" dir={isRTL ? 'rtl' : 'ltr'}>
+      <Box bg={inputBg} className="add-admin-card shadow p-4 w-100">
+        <Flex  className="mb-3 d-flex justify-content-between align-items-center">
           <Text
             color={textColor}
             fontSize="22px"
@@ -382,7 +388,8 @@ const AddProduct = () => {
                   placeholder={t('productForm.enterProductName')}
                   value={nameEn}
                   onChange={(e) => setNameEn(e.target.value)}
-                  color={textColor}
+                  bg={inputBg}
+                  color={inputTextColor}
                 />
               </FormControl>
             </Box>
@@ -394,7 +401,8 @@ const AddProduct = () => {
                   value={nameAr}
                   onChange={(e) => setNameAr(e.target.value)}
                   dir="rtl"
-                  color={textColor}
+                  bg={inputBg}
+                  color={inputTextColor}
                 />
               </FormControl>
             </Box>
@@ -408,6 +416,8 @@ const AddProduct = () => {
                   placeholder={t('productForm.enterProductDescription')}
                   value={descriptionEn}
                   onChange={(e) => setDescriptionEn(e.target.value)}
+                  bg={inputBg}
+                  color={inputTextColor}
                 />
               </FormControl>
             </Box>
@@ -419,6 +429,8 @@ const AddProduct = () => {
                   value={descriptionAr}
                   onChange={(e) => setDescriptionAr(e.target.value)}
                   dir="rtl"
+                  bg={inputBg}
+                  color={inputTextColor}
                 />
               </FormControl>
             </Box>
@@ -435,6 +447,8 @@ const AddProduct = () => {
                   onChange={(e) => setCategoryId(e.target.value)}
                   icon={isRTL ? <ChevronDownIcon style={{ left: 8, right: 'auto', position: 'absolute' }} /> : <ChevronDownIcon />}
                   textAlign={isRTL ? 'right' : 'left'}
+                  bg={inputBg}
+                  color={inputTextColor}
                 >
                   {categories?.map((cat) => (
                     <option key={cat.id} value={cat.id}>
@@ -454,6 +468,8 @@ const AddProduct = () => {
                   onChange={(e) => setBrandId(e.target.value)}
                   icon={isRTL ? <ChevronDownIcon style={{ left: 8, right: 'auto', position: 'absolute' }} /> : <ChevronDownIcon />}
                   textAlign={isRTL ? 'right' : 'left'}
+                  bg={inputBg}
+                  color={inputTextColor}
                 >
                   {brands.map((brand) => (
                     <option key={brand.id} value={brand.id}>
@@ -488,6 +504,8 @@ const AddProduct = () => {
                   onChange={(e) => setProductTypeId(e.target.value)}
                   icon={isRTL ? <ChevronDownIcon style={{ left: 8, right: 'auto', position: 'absolute' }} /> : <ChevronDownIcon />}
                   textAlign={isRTL ? 'right' : 'left'}
+                  bg={inputBg}
+                  color={inputTextColor}
                 >
                   {productTypes.map((type) => (
                     <option key={type.id} value={type.id}>
@@ -508,6 +526,8 @@ const AddProduct = () => {
                   placeholder="0.00"
                   value={cost}
                   onChange={(e) => setCost(e.target.value)}
+                  bg={inputBg}
+                  color={inputTextColor}
                 />
               </FormControl>
             </Box>
@@ -519,6 +539,8 @@ const AddProduct = () => {
                   placeholder="0.00"
                   value={price}
                   onChange={(e) => setPrice(e.target.value)}
+                  bg={inputBg}
+                  color={inputTextColor}
                 />
               </FormControl>
             </Box>
@@ -530,6 +552,8 @@ const AddProduct = () => {
                   placeholder="0"
                   value={quantity}
                   onChange={(e) => setQuantity(e.target.value)}
+                  bg={inputBg}
+                  color={inputTextColor}
                 />
               </FormControl>
             </Box>
@@ -538,7 +562,11 @@ const AddProduct = () => {
                 <FormLabel>{t('productForm.sku')}</FormLabel>
                 <Input
                   type="text"
-                  placeholder="0"
+                  placeholder="Enter SKU (numbers and letters)"
+                  value={sku}
+                  onChange={(e) => setSku(e.target.value)}
+                  bg={useColorModeValue('gray.100', 'gray.700')}
+                  color={useColorModeValue(undefined, 'white')}
                 />
               </FormControl>
             </Box>
@@ -558,12 +586,14 @@ const AddProduct = () => {
               <Box mt={2}>
                 <FormControl>
                   <FormLabel>{t('productForm.offerPercentage')}</FormLabel>
-                  <Input
-                    type="number"
-                    placeholder="0.0"
-                    value={offerPercentage}
-                    onChange={(e) => setOfferPercentage(e.target.value)}
-                  />
+                                  <Input
+                  type="number"
+                  placeholder="0.0"
+                  value={offerPercentage}
+                  onChange={(e) => setOfferPercentage(e.target.value)}
+                  bg={inputBg}
+                  color={inputTextColor}
+                />
                 </FormControl>
               </Box>
             )}
@@ -606,6 +636,8 @@ const AddProduct = () => {
                   onChange={handleVariantSelect}
                   icon={isRTL ? <ChevronDownIcon style={{ left: 8, right: 'auto', position: 'absolute' }} /> : <ChevronDownIcon />}
                   textAlign={isRTL ? 'right' : 'left'}
+                  bg={inputBg}
+                  color={inputTextColor}
                 >
                   {variants.map((variant) => (
                     <option key={variant.id} value={variant.id}>
@@ -647,6 +679,8 @@ const AddProduct = () => {
                                   e.target.value,
                                 )
                               }
+                              bg={inputBg}
+                              color={inputTextColor}
                             />
                           </FormControl>
                           <FormControl isRequired>
@@ -661,6 +695,8 @@ const AddProduct = () => {
                                   e.target.value,
                                 )
                               }
+                              bg={inputBg}
+                              color={inputTextColor}
                             />
                           </FormControl>
                           <FormControl isRequired>
@@ -675,6 +711,8 @@ const AddProduct = () => {
                                   e.target.value,
                                 )
                               }
+                              bg={inputBg}
+                              color={inputTextColor}
                             />
                           </FormControl>
                           <FormControl>
@@ -704,6 +742,8 @@ const AddProduct = () => {
                                   );
                                 }
                               }}
+                              bg={inputBg}
+                              color={inputTextColor}
                             />
                             {attr.image && (
                               <Image
@@ -819,4 +859,4 @@ const AddProduct = () => {
   );
 };
 
-export default AddProduct;
+export default AddProduct; 

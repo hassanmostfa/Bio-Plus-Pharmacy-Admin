@@ -33,6 +33,11 @@ const AddPrescription = () => {
   const navigate = useNavigate();
   const textColor = useColorModeValue("secondaryGray.900", "white");
   const borderColor = useColorModeValue("gray.200", "whiteAlpha.100");
+  const cardBg = useColorModeValue('white', 'gray.700');
+  const inputBg = useColorModeValue('gray.100', 'gray.700');
+  const inputTextColor = useColorModeValue(undefined, 'white');
+  const tableBg = useColorModeValue('white', 'gray.700');
+  const tableRowHover = useColorModeValue('gray.50', 'gray.600');
   const { t } = useTranslation();
   
   // Fetch pharmacy products
@@ -98,8 +103,8 @@ const AddPrescription = () => {
   };
 
   return (
-    <div className="container add-prescription-container w-100">
-      <div className="add-prescription-card shadow p-4 bg-white w-100">
+    <Box bg={inputBg} className="container add-prescription-container w-100">
+      <Box className="add-prescription-card shadow p-4 w-100" style={{ backgroundColor: cardBg, borderColor: borderColor, borderWidth: '1px' }}>
         <div className="mb-3 d-flex justify-content-between align-items-center">
           <Text color={textColor} fontSize="22px" fontWeight="700">
             {t('prescriptions.addPrescriptionToCart')}
@@ -124,9 +129,9 @@ const AddPrescription = () => {
             </Text>
 
             <Box overflowX="auto">
-              <Table variant="simple" color="gray.500" mb="24px" mt="12px">
+              <Table variant="simple" color="gray.500" mb="24px" mt="12px" bg={tableBg}>
                 <Thead>
-                  <Tr>
+                  <Tr bg={tableBg}>
                     <Th pe="10px" borderColor={borderColor}>{t('prescriptions.select')}</Th>
                     <Th pe="10px" borderColor={borderColor}>{t('prescriptions.product')}</Th>
                     <Th pe="10px" borderColor={borderColor}>{t('prescriptions.image')}</Th>
@@ -143,7 +148,7 @@ const AddPrescription = () => {
                       : 1;
 
                     return (
-                      <Tr key={product.id}>
+                      <Tr key={product.id} _hover={{ bg: tableRowHover }}>
                         <Td fontSize={{ sm: '14px' }} minW={{ sm: '150px', md: '200px', lg: 'auto' }} borderColor="transparent">
                           <Checkbox
                             isChecked={isSelected}
@@ -185,7 +190,7 @@ const AddPrescription = () => {
                               onChange={(value) => handleQuantityChange(product.id, value)}
                               width="100px"
                             >
-                              <NumberInputField />
+                              <NumberInputField bg={inputBg} color={inputTextColor} />
                               <NumberInputStepper>
                                 <NumberIncrementStepper />
                                 <NumberDecrementStepper />
@@ -218,8 +223,8 @@ const AddPrescription = () => {
             </Flex>
           </>
         )}
-      </div>
-    </div>
+      </Box>
+    </Box>
   );
 };
 

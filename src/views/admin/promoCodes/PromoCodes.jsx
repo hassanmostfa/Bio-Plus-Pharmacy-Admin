@@ -58,6 +58,9 @@ const PromoCodes = () => {
   const inputText = useColorModeValue("gray.700", "white");
   const tableRowHover = useColorModeValue("gray.50", "gray.600");
   const bgColor = useColorModeValue("white", "gray.700");
+  const cardBg = useColorModeValue('white', 'gray.700');
+  const inputBg = useColorModeValue('gray.100', 'gray.700');
+  const inputTextColor = useColorModeValue(undefined, 'white');
   const { data: promocodesResponse, isLoading, refetch } = useGetPromocodesQuery({ 
     page, 
     limit,
@@ -104,8 +107,6 @@ const PromoCodes = () => {
         confirmButtonColor: '#3085d6',
         cancelButtonColor: '#d33',
         confirmButtonText: t('yesDeleteIt'),
-        background: {bgColor},
-        color: textColor,
       });
 
       if (result.isConfirmed) {
@@ -253,7 +254,7 @@ const PromoCodes = () => {
 
   return (
     <Box pt={{ base: '130px', md: '80px', xl: '80px' }} dir={isRTL ? "rtl" : "ltr"}>
-      <Card flexDirection="column" w="100%" px="0px" overflowX={{ sm: 'scroll', lg: 'hidden' }}>
+      <Card flexDirection="column" w="100%" px="0px" overflowX={{ sm: 'scroll', lg: 'hidden' }} bg={cardBg}>
         <Flex px="25px" mb="8px" justifyContent="space-between" align="center">
           <Text color={textColor} fontSize="22px" fontWeight="700" lineHeight="100%">
             {t('promoCodes')}
@@ -343,6 +344,8 @@ const PromoCodes = () => {
               w="80px"
               variant="outline"
               borderColor={borderColor}
+              bg={inputBg}
+              color={inputTextColor}
             >
               <option value={10}>10</option>
               <option value={20}>20</option>
