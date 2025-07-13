@@ -31,7 +31,6 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { useGetVarientsQuery } from 'api/varientSlice';
 import { useGetCategoriesQuery } from 'api/categorySlice';
 import { useGetBrandsQuery } from 'api/brandSlice';
-import { useGetPharmaciesQuery } from 'api/pharmacySlice';
 import { useGetProductQuery, useUpdateProductMutation } from 'api/productSlice';
 import Swal from 'sweetalert2';
 import { useAddFileMutation } from 'api/filesSlice';
@@ -53,12 +52,11 @@ const EditProduct = () => {
   const [descriptionAr, setDescriptionAr] = useState('');
   const [categoryId, setCategoryId] = useState('');
   const [brandId, setBrandId] = useState('');
-  const [pharmacyId, setPharmacyId] = useState('');
   const [cost, setCost] = useState('');
   const [price, setPrice] = useState('');
   const [quantity, setQuantity] = useState('');
   const [sku, setSku] = useState('');
-  const [productTypeId, setProductTypeId] = useState(''); // New state for product type
+  const [productTypeId, setProductTypeId] = useState('');
   const [offerType, setOfferType] = useState('');
   const [offerPercentage, setOfferPercentage] = useState('');
   const [hasVariants, setHasVariants] = useState(false);
@@ -68,6 +66,21 @@ const EditProduct = () => {
   const [existingImages, setExistingImages] = useState([]); // Existing images from server
   const [mainImageIndex, setMainImageIndex] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
+  const [selectedAttributes, setSelectedAttributes] = useState([]);
+
+  // New states for additional fields
+  const [lotNumber, setLotNumber] = useState('');
+  const [expiryDate, setExpiryDate] = useState('');
+  const [howToUseEn, setHowToUseEn] = useState('');
+  const [howToUseAr, setHowToUseAr] = useState('');
+  const [treatmentEn, setTreatmentEn] = useState('');
+  const [treatmentAr, setTreatmentAr] = useState('');
+  const [ingredientsEn, setIngredientsEn] = useState('');
+  const [ingredientsAr, setIngredientsAr] = useState('');
+
+  // New states for discount
+  const [discount, setDiscount] = useState(null);
+  const [discountType, setDiscountType] = useState(null);
 
   // API queries
   const { data: productResponse, isLoading: isProductLoading , refetch } =
@@ -90,10 +103,6 @@ const EditProduct = () => {
     limit: 1000,
   });
   const { data: brandsResponse } = useGetBrandsQuery({ page: 1, limit: 1000 });
-  const { data: pharmaciesResponse } = useGetPharmaciesQuery({
-    page: 1,
-    limit: 1000,
-  });
   const [updateProduct, { isLoading: isUpdating }] = useUpdateProductMutation();
 
   const { data: productTypesResponse } = useGetTypesQuery({ page: 1, limit: 1000 }); // Fetch product types
@@ -104,8 +113,10 @@ const EditProduct = () => {
   const categories = categoriesResponse?.data?.data || [];
   const variants = variantsResponse?.data || [];
   const brands = brandsResponse?.data || [];
-  const pharmacies = pharmaciesResponse?.data?.items || [];
   const textColor = useColorModeValue('secondaryGray.900', 'white');
+  const inputBg = useColorModeValue('gray.100', 'gray.700');
+  const inputTextColor = useColorModeValue(undefined, 'white');
+  const uploadBg = useColorModeValue('gray.100', 'gray.700');
   const [addFile] = useAddFileMutation();
 
   // Initialize form with product data
@@ -122,7 +133,6 @@ const EditProduct = () => {
       );
       setCategoryId(product.categoryId || '');
       setBrandId(product.brandId || '');
-      setPharmacyId(product.pharmacyId || '');
       setProductTypeId(product.productTypeId || '');
       setCost(product.cost || '');
       setPrice(product.price || '');
@@ -133,6 +143,24 @@ const EditProduct = () => {
       setHasVariants(product.hasVariants || false);
       setIsActive(product.isActive ?? true);
       setIsPublished(product.isPublished ?? false);
+
+      // Set additional fields
+      setLotNumber(product.lotNumber || '');
+      setExpiryDate(product.expiryDate || '');
+      setHowToUseEn(product.howToUse || '');
+      setHowToUseAr(
+        product.translations?.find((t) => t.languageId === 'ar')?.howToUse || '',
+      );
+      setTreatmentEn(product.treatment || '');
+      setTreatmentAr(
+        product.translations?.find((t) => t.languageId === 'ar')?.treatment || '',
+      );
+      setIngredientsEn(product.ingredient || '');
+      setIngredientsAr(
+        product.translations?.find((t) => t.languageId === 'ar')?.ingredient || '',
+      );
+      setDiscount(product.discount || null);
+      setDiscountType(product.discountType || null);
 
       // Set existing images
       if (product.images?.length > 0) {
@@ -151,10 +179,11 @@ const EditProduct = () => {
           cost: variant.cost || '',
           price: variant.price || '',
           quantity: variant.quantity || '',
-          image: variant.imageKey
-            ? { name: variant.imageKey }
-            : null,
+          image: null, // For new file uploads
+          imageKey: variant.imageKey || null, // For existing images from API
           isActive: variant.isActive ?? true,
+          lotNumber: variant.lotNumber || '',
+          expiryDate: variant.expiryDate || '',
         }));
         setSelectedAttributes(attributes);
       }
@@ -198,43 +227,27 @@ const EditProduct = () => {
     }
   };
 
-  const handleSetMainImage = (index, isExisting) => {
-    if (isExisting) {
-      setMainImageIndex(index);
-      // Update isMain flags for existing images
-      setExistingImages(
-        existingImages.map((img, i) => ({
-          ...img,
-          isMain: i === index,
-        })),
-      );
-    } else {
-      // For new images, the index is offset by existing images count
-      setMainImageIndex(index + existingImages.length);
-    }
-  };
-
   const handleRemoveImage = (index, isExisting) => {
     if (isExisting) {
-      setExistingImages(existingImages.filter((_, i) => i !== index));
-      if (mainImageIndex === index) {
-        setMainImageIndex(0); // Reset to first image if main was removed
-      } else if (mainImageIndex > index) {
-        setMainImageIndex(mainImageIndex - 1); // Adjust index if needed
-      }
+      // Mark existing image for deletion
+      const updatedExistingImages = [...existingImages];
+      updatedExistingImages[index].toDelete = true;
+      setExistingImages(updatedExistingImages);
     } else {
-      const newIndex = index - existingImages.length;
-      URL.revokeObjectURL(images[newIndex].preview); // Clean up memory
-
-      const newImages = images.filter((_, i) => i !== newIndex);
+      // Remove newly uploaded image
+      URL.revokeObjectURL(images[index].preview);
+      const newImages = images.filter((_, i) => i !== index);
       setImages(newImages);
-
       if (mainImageIndex === index) {
         setMainImageIndex(0);
       } else if (mainImageIndex > index) {
         setMainImageIndex(mainImageIndex - 1);
       }
     }
+  };
+
+  const handleSetMainImage = (index) => {
+    setMainImageIndex(index);
   };
 
   const handleDragOver = (e) => {
@@ -252,9 +265,6 @@ const EditProduct = () => {
     handleImageUpload(e.dataTransfer.files);
   };
 
-  // Add this with your other state declarations
-  const [selectedAttributes, setSelectedAttributes] = useState([]);
-
   // Variant handling
   const handleVariantSelect = (e) => {
     const variantId = e.target.value;
@@ -271,6 +281,8 @@ const EditProduct = () => {
         quantity: '',
         image: null,
         isActive: true,
+        lotNumber: '',
+        expiryDate: '',
       }));
       setSelectedAttributes([...selectedAttributes, ...newAttributes]);
     }
@@ -291,7 +303,7 @@ const EditProduct = () => {
     e.preventDefault();
 
     try {
-      // Upload new images first
+      // Upload new product images first
       const uploadedImages = [];
       if (images.length > 0) {
         const imageUploadPromises = images.map(async (img, index) => {
@@ -306,8 +318,8 @@ const EditProduct = () => {
           ) {
             return {
               imageKey: uploadResponse.data.uploadedFiles[0].url,
-              order: existingImages.length + index,
-              isMain: existingImages.length + index === mainImageIndex,
+              order: index,
+              isMain: index === mainImageIndex,
             };
           }
           return null;
@@ -317,73 +329,126 @@ const EditProduct = () => {
         uploadedImages.push(...results.filter((img) => img !== null));
       }
 
-      // Prepare existing images data
-      const existingImagesData = existingImages.map((img, index) => ({
-        id: img.id,
-        imageKey: img.imageKey,
-        order: index,
-        isMain: index === mainImageIndex,
-      }));
+      // Prepare existing images (excluding those marked for deletion)
+      const existingImagesToKeep = existingImages
+        .filter((img) => !img.toDelete)
+        .map((img, index) => ({
+          imageKey: img.imageKey,
+          order: index,
+          isMain: index === mainImageIndex,
+        }));
+
+      // Combine existing and new images
+      const allImages = [...existingImagesToKeep, ...uploadedImages];
+
+      // Upload variant images if they exist
+      const variantsWithImages = await Promise.all(
+        selectedAttributes.map(async (attr) => {
+          if (attr.image && attr.image instanceof File) {
+            const formData = new FormData();
+            formData.append('file', attr.image);
+
+            const uploadResponse = await addFile(formData).unwrap();
+
+            if (
+              uploadResponse.success &&
+              uploadResponse.data.uploadedFiles.length > 0
+            ) {
+              return {
+                ...attr,
+                imageKey: uploadResponse.data.uploadedFiles[0].url,
+              };
+            }
+          }
+          // If no new image was uploaded, keep the existing imageKey
+          return {
+            ...attr,
+            imageKey: attr.imageKey || undefined,
+          };
+        }),
+      );
 
       // Prepare translations
       const translations = [];
-      if (nameAr || descriptionAr) {
+      if (nameAr || descriptionAr || howToUseAr || treatmentAr || ingredientsAr) {
         translations.push({
           languageId: 'ar',
           name: nameAr,
           description: descriptionAr,
-        });
-      }
-      if (nameEn || descriptionEn) {
-        translations.push({
-          languageId: 'en',
-          name: nameEn,
-          description: descriptionEn,
+          howToUse: howToUseAr,
+          treatment: treatmentAr,
+          ingredient: ingredientsAr
         });
       }
 
       // Prepare variants data
-      const variantsData = selectedAttributes.map((attr) => ({
-        variantId: attr.variantId,
-        attributeId: attr.attributeId,
-        cost: parseFloat(attr.cost) || 0,
-        price: parseFloat(attr.price) || 0,
-        quantity: parseInt(attr.quantity) || 0,
-        imageKey: attr.imageKey || undefined,
-        isActive: attr.isActive,
-      }));
+      const variantsData = variantsWithImages.map((attr) => {
+        if (!attr.price) {
+          throw new Error('Price is required for each variant.');
+        }
+        return {
+          variantId: attr.variantId,
+          attributeId: attr.attributeId,
+          cost: attr.cost ? parseFloat(attr.cost) : 0,
+          price: parseFloat(attr.price),
+          quantity: attr.quantity ? parseInt(attr.quantity) : 0,
+          imageKey: attr.imageKey || undefined,
+          isActive: attr.isActive,
+          lotNumber: attr.lotNumber || undefined,
+          expiryDate: attr.expiryDate || undefined,
+        };
+      });
 
       // Prepare product data
+      if (!price) {
+        throw new Error('Price is required for the product.');
+      }
       const productData = {
-        name: nameEn,
-        description: descriptionEn,
-        categoryId,
-        brandId,
-        pharmacyId: JSON.parse(localStorage.getItem('pharmacy')).id,
-        productTypeId,
-        cost: cost ? parseFloat(cost) : null,
+        name: nameEn || undefined,
+        description: descriptionEn || undefined,
+        howToUse: howToUseEn || undefined,
+        treatment: treatmentEn || undefined,
+        ingredient: ingredientsEn || undefined,
+        categoryId: categoryId || undefined,
+        brandId: brandId || undefined,
+        pharmacyId: JSON.parse(localStorage.getItem('pharmacy'))?.id,
+        productTypeId: productTypeId || undefined,
+        cost: cost === null ? undefined : parseFloat(cost),
         price: parseFloat(price),
-        quantity: quantity ? parseInt(quantity) : null,
-        sku: sku  ,
-        offerType: offerType || null,
-        offerPercentage: offerPercentage ? parseFloat(offerPercentage) : null,
+        sku: sku || undefined,
+        quantity: quantity === null ? undefined : parseInt(quantity),
+        discount: discount != null ? parseFloat(discount) : undefined,
+        discountType: discountType,
+        lotNumber: lotNumber || undefined,
+        expiryDate: expiryDate || undefined,
+        offerType:
+          offerType === null || offerType === ''
+            ? undefined
+            : offerType.toUpperCase().replace(' ', '_'),
+        offerPercentage:
+          offerType === null || offerType === '' || offerPercentage == null 
+            ? undefined 
+            : parseFloat(offerPercentage),
         hasVariants,
         isActive,
         isPublished,
         translations: translations.filter((t) => t.name && t.description),
-        images: [...existingImagesData, ...uploadedImages],
-        // variants: hasVariants ? variantsData : [],
+        images: allImages,
+        variants: hasVariants ? variantsData : undefined,
       };
 
-      // Remove null values
+      // Remove any keys that are null
       Object.keys(productData).forEach((key) => {
-        if (productData[key] === null || productData[key] === undefined) {
+        if (productData[key] == null || productData[key] === undefined) {
           delete productData[key];
         }
       });
 
       // Submit to API
-      const response = await updateProduct({ id, data: productData }).unwrap();
+      const response = await updateProduct({
+        id: id,
+        data: productData,
+      }).unwrap();
 
       toast({
         title: 'Success',
@@ -408,13 +473,13 @@ const EditProduct = () => {
 
   const handleCancel = () => {
     Swal.fire({
-      title: isRTL ? 'هل أنت متأكد؟' : 'Are you sure?',
-      text: isRTL ? 'سوف تفقد جميع التغييرات غير المحفوظة' : 'You will lose all unsaved changes',
+      title: 'Are you sure?',
+      text: 'You will lose all unsaved changes',
       icon: 'warning',
       showCancelButton: true,
       confirmButtonColor: '#3085d6',
       cancelButtonColor: '#d33',
-      confirmButtonText: isRTL ? 'نعم، تجاهل التغييرات' : 'Yes, discard changes',
+      confirmButtonText: 'Yes, discard changes',
     }).then((result) => {
       if (result.isConfirmed) {
         navigate('/admin/products');
@@ -422,31 +487,16 @@ const EditProduct = () => {
     });
   };
 
-  const cardBg = useColorModeValue('white', 'navy.700');
-  const inputBg = useColorModeValue('gray.100', 'gray.700');
-  const borderColor = useColorModeValue('gray.200', 'whiteAlpha.100');
-  const uploadBg = inputBg;
-  const uploadDragBg = useColorModeValue('blue.50', 'brand.900');
-  const inputTextColor = useColorModeValue(undefined, 'white');
-
   if (isProductLoading) {
     return (
-      <Flex justify="center" align="center" minH="100vh">
+      <Box display="flex" justifyContent="center" alignItems="center" height="100vh">
         <Spinner size="xl" />
-      </Flex>
-    );
-  }
-
-  if (!product) {
-    return (
-      <Flex justify="center" align="center" minH="100vh">
-        <Text>{isRTL ? 'المنتج غير موجود' : 'Product not found'}</Text>
-      </Flex>
+      </Box>
     );
   }
 
   return (
-    <Flex className="container add-admin-container w-100" dir={isRTL ? 'rtl' : 'ltr'}>
+    <Box bg={inputBg} className="container add-admin-container w-100" dir={isRTL ? 'rtl' : 'ltr'}>
       <Box bg={inputBg} className="add-admin-card shadow p-4 w-100">
         <Flex className="mb-3 d-flex justify-content-between align-items-center">
           <Text
@@ -456,17 +506,16 @@ const EditProduct = () => {
             mb="20px !important"
             lineHeight="100%"
           >
-            {isRTL ? 'تعديل المنتج' : 'Edit Product'}
+            {t('productForm.editProduct')}
           </Text>
           <Button
             type="button"
             onClick={handleCancel}
             colorScheme="teal"
             size="sm"
-            leftIcon={!isRTL ? <IoMdArrowBack /> : null}
-            rightIcon={isRTL ? <IoMdArrowBack /> : null}
+            leftIcon={<IoMdArrowBack />}
           >
-            {isRTL ? 'رجوع' : 'Back'}
+            {t('productForm.back')}
           </Button>
         </Flex>
         <form onSubmit={handleSubmit}>
@@ -474,12 +523,11 @@ const EditProduct = () => {
           <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4} mb={4}>
             <Box>
               <FormControl isRequired>
-                <FormLabel>{t('productForm.nameEn')}</FormLabel>
+                <FormLabel>{t('productForm.productNameEn')}</FormLabel>
                 <Input
-                  placeholder={isRTL ? 'أدخل اسم المنتج بالإنجليزية' : 'Enter Product Name'}
+                  placeholder={t('productForm.enterProductName')}
                   value={nameEn}
                   onChange={(e) => setNameEn(e.target.value)}
-                  dir={isRTL ? 'rtl' : 'ltr'}
                   bg={inputBg}
                   color={inputTextColor}
                 />
@@ -487,9 +535,9 @@ const EditProduct = () => {
             </Box>
             <Box>
               <FormControl>
-                <FormLabel>{t('productForm.nameAr')}</FormLabel>
+                <FormLabel>{t('productForm.productNameAr')}</FormLabel>
                 <Input
-                  placeholder={isRTL ? 'أدخل اسم المنتج' : 'Enter Product Name in Arabic'}
+                  placeholder={t('productForm.enterProductNameAr')}
                   value={nameAr}
                   onChange={(e) => setNameAr(e.target.value)}
                   dir="rtl"
@@ -500,115 +548,269 @@ const EditProduct = () => {
             </Box>
           </SimpleGrid>
 
+          {/* Description Sections */}
           <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4} mb={4}>
             <Box>
               <FormControl isRequired>
                 <FormLabel>{t('productForm.descriptionEn')}</FormLabel>
                 <Textarea
-                  placeholder={isRTL ? 'أدخل وصف المنتج بالإنجليزية' : 'Enter Product Description'}
+                  placeholder={t('productForm.enterDescription')}
                   value={descriptionEn}
                   onChange={(e) => setDescriptionEn(e.target.value)}
-                  dir={isRTL ? 'rtl' : 'ltr'}
                   bg={inputBg}
                   color={inputTextColor}
+                  maxLength={500}
                 />
+                <Text fontSize="sm" color="gray.500" mt={1}>
+                  {descriptionEn.length}/500 {t('common.characters')}
+                </Text>
               </FormControl>
             </Box>
             <Box>
               <FormControl>
                 <FormLabel>{t('productForm.descriptionAr')}</FormLabel>
                 <Textarea
-                  placeholder={isRTL ? 'أدخل وصف المنتج' : 'Enter Product Description in Arabic'}
+                  placeholder={t('productForm.enterDescriptionAr')}
                   value={descriptionAr}
                   onChange={(e) => setDescriptionAr(e.target.value)}
                   dir="rtl"
                   bg={inputBg}
                   color={inputTextColor}
+                  maxLength={500}
                 />
+                <Text fontSize="sm" color="gray.500" mt={1}>
+                  {descriptionAr.length}/500 {t('common.characters')}
+                </Text>
+              </FormControl>
+            </Box>
+
+            {/* How To Use */}
+            <Box>
+              <FormControl>
+                <FormLabel>{t('productForm.howToUseEn')}</FormLabel>
+                <Textarea
+                  placeholder={t('productForm.enterHowToUse')}
+                  value={howToUseEn}
+                  onChange={(e) => setHowToUseEn(e.target.value)}
+                  bg={inputBg}
+                  color={inputTextColor}
+                  maxLength={500}
+                />
+                <Text fontSize="sm" color="gray.500" mt={1}>
+                  {howToUseEn.length}/500 {t('common.characters')}
+                </Text>
+              </FormControl>
+            </Box>
+            <Box>
+              <FormControl>
+                <FormLabel>{t('productForm.howToUseAr')}</FormLabel>
+                <Textarea
+                  placeholder={t('productForm.enterHowToUseAr')}
+                  value={howToUseAr}
+                  onChange={(e) => setHowToUseAr(e.target.value)}
+                  dir="rtl"
+                  bg={inputBg}
+                  color={inputTextColor}
+                  maxLength={500}
+                />
+                <Text fontSize="sm" color="gray.500" mt={1}>
+                  {howToUseAr.length}/500 {t('common.characters')}
+                </Text>
+              </FormControl>
+            </Box>
+
+            {/* Treatment */}
+            <Box>
+              <FormControl>
+                <FormLabel>{t('productForm.treatmentEn')}</FormLabel>
+                <Textarea
+                  placeholder={t('productForm.enterTreatmentInformation')}
+                  value={treatmentEn}
+                  onChange={(e) => setTreatmentEn(e.target.value)}
+                  bg={inputBg}
+                  color={inputTextColor}
+                  maxLength={500}
+                />
+                <Text fontSize="sm" color="gray.500" mt={1}>
+                  {treatmentEn.length}/500 {t('common.characters')}
+                </Text>
+              </FormControl>
+            </Box>
+            <Box>
+              <FormControl>
+                <FormLabel>{t('productForm.treatmentAr')}</FormLabel>
+                <Textarea
+                  placeholder={t('productForm.enterTreatmentAr')}
+                  value={treatmentAr}
+                  onChange={(e) => setTreatmentAr(e.target.value)}
+                  dir="rtl"
+                  bg={inputBg}
+                  color={inputTextColor}
+                  maxLength={500}
+                />
+                <Text fontSize="sm" color="gray.500" mt={1}>
+                  {treatmentAr.length}/500 {t('common.characters')}
+                </Text>
+              </FormControl>
+            </Box>
+
+            {/* Ingredients */}
+            <Box>
+              <FormControl>
+                <FormLabel>{t('productForm.ingredientsEn')}</FormLabel>
+                <Textarea
+                  placeholder={t('productForm.enterIngredients')}
+                  value={ingredientsEn}
+                  onChange={(e) => setIngredientsEn(e.target.value)}
+                  bg={inputBg}
+                  color={inputTextColor}
+                  maxLength={500}
+                />
+                <Text fontSize="sm" color="gray.500" mt={1}>
+                  {ingredientsEn.length}/500 {t('common.characters')}
+                </Text>
+              </FormControl>
+            </Box>
+            <Box>
+              <FormControl>
+                <FormLabel>{t('productForm.ingredientsAr')}</FormLabel>
+                <Textarea
+                  placeholder={t('productForm.enterIngredientsAr')}
+                  value={ingredientsAr}
+                  onChange={(e) => setIngredientsAr(e.target.value)}
+                  dir="rtl"
+                  bg={inputBg}
+                  color={inputTextColor}
+                  maxLength={500}
+                />
+                <Text fontSize="sm" color="gray.500" mt={1}>
+                  {ingredientsAr.length}/500 {t('common.characters')}
+                </Text>
               </FormControl>
             </Box>
           </SimpleGrid>
 
-          {/* Category, Brand, and Pharmacy */}
+          {/* SKU, Lot Number, Expiry Date (only if no variants) */}
+            <SimpleGrid columns={{ base: 1, md: 3 }} spacing={4} mb={4}>
+              <Box>
+                <FormControl>
+                  <FormLabel>{t('productForm.sku')}</FormLabel>
+                  <Input
+                    type="text"
+                    placeholder={t('productForm.enterSku')}
+                    value={sku}
+                    onChange={(e) => setSku(e.target.value)}
+                    bg={inputBg}
+                    color={inputTextColor}
+                  />
+                </FormControl>
+              </Box>
+              <Box>
+                <FormControl>
+                  <FormLabel>{t('productForm.lotNumber')}</FormLabel>
+                  <Input
+                    type="text"
+                    placeholder={t('productForm.enterLotNumber')}
+                    value={lotNumber}
+                    onChange={(e) => setLotNumber(e.target.value)}
+                    bg={inputBg}
+                    color={inputTextColor}
+                  />
+                </FormControl>
+              </Box>
+              <Box>
+                <FormControl>
+                  <FormLabel>{t('productForm.expiryDate')}</FormLabel>
+                  <Input
+                    type="date"
+                    value={expiryDate}
+                    onChange={(e) => setExpiryDate(e.target.value)}
+                    bg={inputBg}
+                    color={inputTextColor}
+                  />
+                </FormControl>
+              </Box>
+            </SimpleGrid>
+
+          {/* Category, Brand and Product Type */}
           <SimpleGrid columns={{ base: 1, md: 3 }} spacing={4} mb={4}>
             <Box>
               <FormControl isRequired>
                 <FormLabel>{t('productForm.category')}</FormLabel>
-                <Box dir="ltr">
-                  <Select
-                    placeholder={isRTL ? 'اختر الفئة' : 'Select Category'}
-                    value={categoryId}
-                    onChange={(e) => setCategoryId(e.target.value)}
-                    bg={inputBg}
-                    color={inputTextColor}
-                  >
-                    {categories?.map((cat) => (
-                      <option key={cat.id} value={cat.id}>
-                        {isRTL 
-                          ? cat.translations?.find((t) => t.languageId === 'ar')?.name || cat.name
-                          : cat.translations?.find((t) => t.languageId === 'en')?.name || cat.name}
-                      </option>
-                    ))}
-                  </Select>
-                </Box>
+                <Select
+                  placeholder={t('productForm.selectCategory')}
+                  value={categoryId}
+                  onChange={(e) => setCategoryId(e.target.value)}
+                  bg={inputBg}
+                  color={inputTextColor}
+                  style={{ direction: 'ltr' }}
+                >
+                  {categories?.map((cat) => (
+                    <option key={cat.id} value={cat.id}>
+                      {cat.translations?.find((t) => t.languageId === 'en')
+                        ?.name || cat.name}
+                    </option>
+                  ))}
+                </Select>
               </FormControl>
             </Box>
             <Box>
               <FormControl isRequired>
                 <FormLabel>{t('productForm.brand')}</FormLabel>
-                <Box dir="ltr">
-                  <Select
-                    placeholder={isRTL ? 'اختر الماركة' : 'Select Brand'}
-                    value={brandId}
-                    onChange={(e) => setBrandId(e.target.value)}
-                    bg={inputBg}
-                    color={inputTextColor}
-                  >
-                    {brands.map((brand) => (
-                      <option key={brand.id} value={brand.id}>
-                        {brand.name}
-                      </option>
-                    ))}
-                  </Select>
-                </Box>
+                <Select
+                  placeholder={t('productForm.selectBrand')}
+                  value={brandId}
+                  onChange={(e) => setBrandId(e.target.value)}
+                  bg={inputBg}
+                  color={inputTextColor}
+                  style={{ direction: 'ltr' }}
+                >
+                  {brands.map((brand) => (
+                    <option key={brand.id} value={brand.id}>
+                      {brand.name}
+                    </option>
+                  ))}
+                </Select>
               </FormControl>
             </Box>
-
             <Box>
               <FormControl>
                 <FormLabel>{t('productForm.productType')}</FormLabel>
-                <Box dir="ltr">
-                  <Select
-                    placeholder={isRTL ? 'اختر نوع المنتج' : 'Select Product Type'}
-                    value={productTypeId}
-                    onChange={(e) => setProductTypeId(e.target.value)}
-                    bg={inputBg}
-                    color={inputTextColor}
-                  >
-                    {productTypes.map((type) => (
-                      <option key={type.id} value={type.id}>
-                        {type.name}
-                      </option>
-                    ))}
-                  </Select>
-                </Box>
+                <Select
+                  placeholder={t('productForm.selectProductType')}
+                  value={productTypeId}
+                  onChange={(e) => setProductTypeId(e.target.value)}
+                  bg={inputBg}
+                  color={inputTextColor}
+                  style={{ direction: 'ltr' }}
+                >
+                  {productTypes.map((type) => (
+                    <option key={type.id} value={type.id}>
+                      {type.name}
+                    </option>
+                  ))}
+                </Select>
               </FormControl>
             </Box>
           </SimpleGrid>
 
-          {/* Pricing Information */}
-          <SimpleGrid columns={{ base: 1, md: 4 }} spacing={4} mb={4}>
+          <SimpleGrid columns={{ base: 1, md: 3 }} spacing={4} mb={4}>
             <Box>
-              <FormControl>
+              <FormControl isRequired>
                 <FormLabel>{t('productForm.cost')}</FormLabel>
                 <Input
                   type="number"
-                  placeholder="0.00"
+                  placeholder={t('productForm.enterCost')}
                   value={cost}
                   onChange={(e) => setCost(e.target.value)}
-                  dir={isRTL ? 'rtl' : 'ltr'}
                   bg={inputBg}
                   color={inputTextColor}
+                  min="0"
+                  onKeyDown={(e) => {
+                    if (e.key === '-') {
+                      e.preventDefault();
+                    }
+                  }}
                 />
               </FormControl>
             </Box>
@@ -617,41 +819,42 @@ const EditProduct = () => {
                 <FormLabel>{t('productForm.price')}</FormLabel>
                 <Input
                   type="number"
-                  placeholder="0.00"
+                  placeholder={t('productForm.enterPrice')}
                   value={price}
                   onChange={(e) => setPrice(e.target.value)}
-                  dir={isRTL ? 'rtl' : 'ltr'}
                   bg={inputBg}
                   color={inputTextColor}
+                  min="0"
+                  onKeyDown={(e) => {
+                    if (e.key === '-') {
+                      e.preventDefault();
+                    }
+                  }}
                 />
               </FormControl>
             </Box>
             <Box>
-              <FormControl>
+              <FormControl isRequired>
                 <FormLabel>{t('productForm.quantity')}</FormLabel>
                 <Input
                   type="number"
-                  placeholder="0"
+                  placeholder={t('productForm.enterQuantity')}
                   value={quantity}
-                  onChange={(e) => setQuantity(e.target.value)}
-                  dir={isRTL ? 'rtl' : 'ltr'}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    if (value.length <= 5) {
+                      setQuantity(value);
+                    }
+                  }}
                   bg={inputBg}
                   color={inputTextColor}
-                />
-              </FormControl>
-            </Box>
-
-            <Box>
-              <FormControl isRequired>
-                <FormLabel>{t('productForm.sku')}</FormLabel>
-                <Input
-                  type="text"
-                  placeholder={isRTL ? 'أدخل رمز المنتج (أرقام وحروف)' : 'Enter SKU (numbers and letters)'}
-                  value={sku}
-                  onChange={(e) => setSku(e.target.value)}
-                  dir={isRTL ? 'rtl' : 'ltr'}
-                  bg={inputBg}
-                  color={inputTextColor}
+                  min="0"
+                  max="99999"
+                  onKeyDown={(e) => {
+                    if (e.key === '-') {
+                      e.preventDefault();
+                    }
+                  }}
                 />
               </FormControl>
             </Box>
@@ -660,19 +863,11 @@ const EditProduct = () => {
           {/* Offer Type */}
           <Box mb={4}>
             <FormLabel>{t('productForm.offerType')}</FormLabel>
-            <RadioGroup
-              value={offerType}
-              onChange={(value) => {
-                setOfferType(value);
-                if (value !== 'MONTHLY_OFFER') {
-                  setOfferPercentage('');
-                }
-              }}
-            >
-              <Stack direction={isRTL ? 'row-reverse' : 'row'}>
-                <Radio value="MONTHLY_OFFER">{isRTL ? 'عرض شهري' : 'Monthly Offer'}</Radio>
-                <Radio value="NEW_ARRIVAL">{isRTL ? 'وصل حديثاً' : 'New Arrival'}</Radio>
-                <Radio value="">{isRTL ? 'لا يوجد' : 'None'}</Radio>
+            <RadioGroup value={offerType} onChange={setOfferType}>
+              <Stack direction="row">
+                <Radio value="MONTHLY_OFFER">{t('productForm.monthlyOffer')}</Radio>
+                <Radio value="NEW_ARRIVAL">{t('productForm.newArrival')}</Radio>
+                <Radio value="NONE">{t('productForm.none')}</Radio>
               </Stack>
             </RadioGroup>
             {offerType === 'MONTHLY_OFFER' && (
@@ -681,10 +876,9 @@ const EditProduct = () => {
                   <FormLabel>{t('productForm.offerPercentage')}</FormLabel>
                   <Input
                     type="number"
-                    placeholder="0.0"
+                    placeholder={t('productForm.enterOfferPercentage')}
                     value={offerPercentage}
                     onChange={(e) => setOfferPercentage(e.target.value)}
-                    dir={isRTL ? 'rtl' : 'ltr'}
                     bg={inputBg}
                     color={inputTextColor}
                   />
@@ -693,34 +887,72 @@ const EditProduct = () => {
             )}
           </Box>
 
+          {/* Discount Fields (only if no variants) */}
+            <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4} mb={4}>
+              <Box>
+                <FormControl>
+                  <FormLabel>{t('productForm.discount')}</FormLabel>
+                  <Input
+                    type="number"
+                    placeholder={t('productForm.enterDiscountValue')}
+                    value={discount != null ? discount : ''}
+                    onChange={(e) => setDiscount(e.target.value)}
+                    bg={inputBg}
+                    color={inputTextColor}
+                    min="0"
+                    onKeyDown={(e) => {
+                      if (e.key === '-') {
+                        e.preventDefault();
+                      }
+                    }}
+                  />
+                </FormControl>
+              </Box>
+              <Box>
+                <FormControl>
+                  <FormLabel>{t('productForm.discountType')}</FormLabel>
+                  <Select
+                    placeholder={t('productForm.selectDiscountType')}
+                    value={discountType || ''}
+                    onChange={(e) => setDiscountType(e.target.value)}
+                    bg={inputBg}
+                    color={inputTextColor}
+                    style={{ direction: 'ltr' }}
+                  >
+                    <option value="PERCENTAGE">{t('productForm.percentage')}</option>
+                    <option value="FIXED">{t('productForm.fixed')}</option>
+                  </Select>
+                </FormControl>
+              </Box>
+            </SimpleGrid>
+
           {/* Status Switches */}
-          <SimpleGrid columns={{ base: 1, md: 3 }} spacing={4} mb={4}>
-            <FormControl display="flex" alignItems="center" flexDirection={isRTL ? 'row-reverse' : 'row'}>
-              <FormLabel mb="0" ml={isRTL ? 2 : 3} mr={isRTL ? 3 : 2}>{t('productForm.hasVariants')}</FormLabel>
-              <Box dir="ltr">
-                <Switch
-                  isChecked={hasVariants}
-                  onChange={() => setHasVariants(!hasVariants)}
-                />
-              </Box>
+          <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4} mb={4}>
+            <FormControl display="flex" alignItems="center">
+              <FormLabel mb="0">{t('productForm.isPublished')}</FormLabel>
+              <Switch
+                isChecked={isPublished}
+                onChange={() => setIsPublished(!isPublished)}
+                style={{ direction: 'ltr' }}
+              />
             </FormControl>
-            <FormControl display="flex" alignItems="center" flexDirection={isRTL ? 'row-reverse' : 'row'}>
-              <FormLabel mb="0" ml={isRTL ? 2 : 3} mr={isRTL ? 3 : 2}>{t('productForm.active')}</FormLabel>
-              <Box dir="ltr">
-                <Switch
-                  isChecked={isActive}
-                  onChange={() => setIsActive(!isActive)}
-                />
-              </Box>
+
+            <FormControl display="flex" alignItems="center">
+              <FormLabel mb="0">{t('productForm.isActive')}</FormLabel>
+              <Switch
+                isChecked={isActive}
+                onChange={() => setIsActive(!isActive)}
+                style={{ direction: 'ltr' }}
+              />
             </FormControl>
-            <FormControl display="flex" alignItems="center" flexDirection={isRTL ? 'row-reverse' : 'row'}>
-              <FormLabel mb="0" ml={isRTL ? 2 : 3} mr={isRTL ? 3 : 2}>{t('productForm.published')}</FormLabel>
-              <Box dir="ltr">
-                <Switch
-                  isChecked={isPublished}
-                  onChange={() => setIsPublished(!isPublished)}
-                />
-              </Box>
+            
+            <FormControl display="flex" alignItems="center">
+              <FormLabel mb="0">{t('productForm.hasVariants')}</FormLabel>
+              <Switch
+                isChecked={hasVariants}
+                onChange={() => setHasVariants(!hasVariants)}
+                style={{ direction: 'ltr' }}
+              />
             </FormControl>
           </SimpleGrid>
 
@@ -729,34 +961,33 @@ const EditProduct = () => {
             <Box mb={4}>
               <FormControl mb={4}>
                 <FormLabel>{t('productForm.selectVariant')}</FormLabel>
-                <Box dir="ltr">
-                  <Select
-                    placeholder={isRTL ? 'اختر المتغير' : 'Select Variant'}
-                    onChange={handleVariantSelect}
-                    bg={inputBg}
-                    color={inputTextColor}
-                  >
-                    {variants.map((variant) => (
-                      <option key={variant.id} value={variant.id}>
-                        {variant.name}
-                      </option>
-                    ))}
-                  </Select>
-                </Box>
+                <Select
+                  placeholder={t('productForm.selectVariant')}
+                  onChange={handleVariantSelect}
+                  bg={inputBg}
+                  color={inputTextColor}
+                  style={{ direction: 'ltr' }}
+                >
+                  {variants.map((variant) => (
+                    <option key={variant.id} value={variant.id}>
+                      {variant.name}
+                    </option>
+                  ))}
+                </Select>
               </FormControl>
 
               {selectedAttributes.length > 0 && (
                 <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4}>
                   {selectedAttributes.map((attr, index) => (
-                    <Card key={index} bg={cardBg} borderColor={borderColor} borderWidth="1px">
+                    <Card key={index}>
                       <CardHeader>
-                        <Flex justify="space-between" align="center" direction={isRTL ? 'row-reverse' : 'row'}>
+                        <Flex justify="space-between" align="center">
                           <Text fontWeight="bold">
                             {attr.variantName} - {attr.attributeValue}
                           </Text>
                           <IconButton
                             icon={<FaTrash />}
-                            aria-label={isRTL ? 'حذف المتغير' : 'Delete variant'}
+                            aria-label={t('common.deleteVariant')}
                             size="sm"
                             colorScheme="red"
                             onClick={() => handleDeleteAttribute(index)}
@@ -765,7 +996,7 @@ const EditProduct = () => {
                       </CardHeader>
                       <CardBody>
                         <SimpleGrid columns={2} spacing={2}>
-                          <FormControl>
+                          <FormControl isRequired>
                             <FormLabel>{t('productForm.cost')}</FormLabel>
                             <Input
                               type="number"
@@ -777,9 +1008,14 @@ const EditProduct = () => {
                                   e.target.value,
                                 )
                               }
-                              dir={isRTL ? 'rtl' : 'ltr'}
                               bg={inputBg}
                               color={inputTextColor}
+                              min="0"
+                              onKeyDown={(e) => {
+                                if (e.key === '-') {
+                                  e.preventDefault();
+                                }
+                              }}
                             />
                           </FormControl>
                           <FormControl isRequired>
@@ -794,26 +1030,40 @@ const EditProduct = () => {
                                   e.target.value,
                                 )
                               }
-                              dir={isRTL ? 'rtl' : 'ltr'}
                               bg={inputBg}
                               color={inputTextColor}
+                              min="0"
+                              onKeyDown={(e) => {
+                                if (e.key === '-') {
+                                  e.preventDefault();
+                                }
+                              }}
                             />
                           </FormControl>
-                          <FormControl>
+                          <FormControl isRequired>
                             <FormLabel>{t('productForm.quantity')}</FormLabel>
                             <Input
                               type="number"
                               value={attr.quantity}
-                              onChange={(e) =>
-                                handleAttributeChange(
-                                  index,
-                                  'quantity',
-                                  e.target.value,
-                                )
-                              }
-                              dir={isRTL ? 'rtl' : 'ltr'}
+                              onChange={(e) => {
+                                const value = e.target.value;
+                                if (value.length <= 5) {
+                                  handleAttributeChange(
+                                    index,
+                                    'quantity',
+                                    value,
+                                  );
+                                }
+                              }}
                               bg={inputBg}
                               color={inputTextColor}
+                              min="0"
+                              max="99999"
+                              onKeyDown={(e) => {
+                                if (e.key === '-') {
+                                  e.preventDefault();
+                                }
+                              }}
                             />
                           </FormControl>
                           <FormControl>
@@ -821,28 +1071,56 @@ const EditProduct = () => {
                             <Input
                               type="file"
                               accept="image/*"
-                              onChange={(e) =>
-                                handleAttributeChange(
-                                  index,
-                                  'image',
-                                  e.target.files[0],
-                                )
-                              }
-                              dir={isRTL ? 'rtl' : 'ltr'}
+                              onChange={(e) => {
+                                if (e.target.files && e.target.files[0]) {
+                                  if (
+                                    !e.target.files[0].type.startsWith('image/')
+                                  ) {
+                                    toast({
+                                      title: t('common.error'),
+                                      description: t('forms.imageOnlyError'),
+                                      status: 'error',
+                                      duration: 5000,
+                                      isClosable: true,
+                                    });
+                                    return;
+                                  }
+                                  handleAttributeChange(
+                                    index,
+                                    'image',
+                                    e.target.files[0],
+                                  );
+                                }
+                              }}
                               bg={inputBg}
                               color={inputTextColor}
                             />
-                            {attr.image && (
-                              <Box mt={2}>
-                                <Image
-                                  src={attr.image ? attr.image.name : undefined}
-                                  alt={isRTL ? 'المتغير المحدد' : 'Selected variant'}
-                                  boxSize="100px"
-                                  objectFit="cover"
-                                  borderRadius="md"
-                                />
-                              </Box>
+                            {(attr.image || attr.imageKey) && (
+                              <Image
+                                src={attr.image instanceof File ? URL.createObjectURL(attr.image) : (attr.imageKey || attr.image)}
+                                alt={t('productForm.variantPreview')}
+                                mt={2}
+                                maxH="100px"
+                              />
                             )}
+                          </FormControl>
+
+                          {/* Variant Expiry Date */}
+                          <FormControl>
+                            <FormLabel>{t('productForm.expiryDate')}</FormLabel>
+                            <Input
+                              type="date"
+                              value={attr.expiryDate}
+                              onChange={(e) =>
+                                handleAttributeChange(
+                                  index,
+                                  'expiryDate',
+                                  e.target.value,
+                                )
+                              }
+                              bg={inputBg}
+                              color={inputTextColor}
+                            />
                           </FormControl>
                         </SimpleGrid>
                       </CardBody>
@@ -855,142 +1133,142 @@ const EditProduct = () => {
 
           {/* Product Images */}
           <Box mb={4}>
-            <FormControl>
-              <FormLabel>{t('productForm.productImages')}</FormLabel>
+            <FormControl isRequired={images.length === 0 && existingImages.length === 0}>
+              <FormLabel>
+                {t('productForm.productImages')}
+                {images.length === 0 && existingImages.length === 0 && <span style={{ color: 'red' }}>*</span>}
+              </FormLabel>
               <Box
                 border="1px dashed"
-                borderColor={isDragging ? 'blue.500' : borderColor}
+                borderColor={isDragging ? 'brand.500' : 'gray.300'}
                 borderRadius="md"
                 p={4}
                 textAlign="center"
+                backgroundColor={isDragging ? 'brand.50' : uploadBg}
+                cursor="pointer"
                 onDragOver={handleDragOver}
                 onDragLeave={handleDragLeave}
                 onDrop={handleDrop}
-                cursor="pointer"
-                bg={isDragging ? uploadDragBg : uploadBg}
+                mb={4}
               >
-                <Icon as={FaUpload} w={8} h={8} color="blue.500" mb={2} />
-                <Text>{t('productForm.dragDropImages')}</Text>
-                <Button
-                  variant="link"
-                  color="blue.500"
-                  onClick={() => document.getElementById('file-upload').click()}
-                >
-                  {t('productForm.browseFiles')}
-                </Button>
-                <Input
-                  id="file-upload"
-                  type="file"
-                  multiple
-                  accept="image/*"
-                  onChange={(e) => handleImageUpload(e.target.files)}
-                  display="none"
-                />
-              </Box>
-            </FormControl>
-            {(existingImages.length > 0 || images.length > 0) && (
-              <SimpleGrid columns={{ base: 2, md: 4 }} spacing={4} mt={4}>
-                {existingImages.map((img, index) => (
-                  <Box key={`existing-${index}`} position="relative">
-                    <Image
-                      src={img.imageKey}
-                      alt={`Product image ${index + 1}`}
-                      borderRadius="md"
-                      border={
-                        index === mainImageIndex ? '2px solid' : '1px solid'
-                      }
-                      borderColor={
-                        index === mainImageIndex ? 'blue.500' : borderColor
-                      }
-                      cursor="pointer"
-                      onClick={() => handleSetMainImage(index, true)}
-                    />
-                    {index === mainImageIndex && (
-                      <Badge
-                        position="absolute"
-                        top={2}
-                        left={isRTL ? 'auto' : 2}
-                        right={isRTL ? 2 : 'auto'}
-                        colorScheme="blue"
-                      >
-                        {t('productForm.main')}
-                      </Badge>
-                    )}
-                    <IconButton
-                      icon={<FaTrash />}
-                      aria-label={isRTL ? 'إزالة الصورة' : 'Remove image'}
-                      size="sm"
-                      colorScheme="red"
-                      position="absolute"
-                      top={2}
-                      left={isRTL ? 2 : 'auto'}
-                      right={isRTL ? 'auto' : 2}
-                      onClick={() => handleRemoveImage(index, true)}
-                    />
-                  </Box>
-                ))}
-                {images.map((img, index) => {
-                  const globalIndex = existingImages.length + index;
-                  return (
-                    <Box key={`new-${index}`} position="relative">
-                      <Image
-                        src={img.preview}
-                        alt={`New image ${index + 1}`}
-                        borderRadius="md"
-                        border={
-                          globalIndex === mainImageIndex
-                            ? '2px solid'
-                            : '1px solid'
-                        }
-                        borderColor={
-                          globalIndex === mainImageIndex
-                            ? 'blue.500'
-                            : borderColor
-                        }
-                        cursor="pointer"
-                        onClick={() => handleSetMainImage(globalIndex, false)}
-                      />
-                      {globalIndex === mainImageIndex && (
-                        <Badge
+                {existingImages.length > 0 || images.length > 0 ? (
+                  <SimpleGrid columns={{ base: 2, md: 4 }} spacing={4}>
+                    {/* Existing Images */}
+                    {existingImages.map((img, index) => (
+                      <Box key={`existing-${index}`} position="relative" display="flex" flexDirection="column" alignItems="center">
+                        <Image
+                          src={img.imageKey}
+                          alt={t('productForm.productImage', { index: index + 1 })}
+                          borderRadius="md"
+                          maxH="150px"
+                          border={mainImageIndex === index ? '2px solid' : '1px solid'}
+                          borderColor={mainImageIndex === index ? 'brand.500' : 'gray.300'}
+                          cursor="pointer"
+                          onClick={() => handleSetMainImage(index)}
+                          opacity={img.toDelete ? 0.5 : 1}
+                        />
+                        {mainImageIndex === index && (
+                          <Badge position="absolute" top={2} left={2} colorScheme="brand">
+                            {t('productForm.main')}
+                          </Badge>
+                        )}
+                        <IconButton
+                          icon={<FaTrash />}
+                          aria-label={t('common.removeImage')}
+                          size="sm"
+                          colorScheme="red"
                           position="absolute"
                           top={2}
-                          left={isRTL ? 'auto' : 2}
-                          right={isRTL ? 2 : 'auto'}
-                          colorScheme="blue"
-                        >
-                          {t('productForm.main')}
-                        </Badge>
-                      )}
-                      <IconButton
-                        icon={<FaTrash />}
-                        aria-label={isRTL ? 'إزالة الصورة' : 'Remove image'}
-                        size="sm"
-                        colorScheme="red"
-                        position="absolute"
-                        top={2}
-                        left={isRTL ? 2 : 'auto'}
-                        right={isRTL ? 'auto' : 2}
-                        onClick={() => handleRemoveImage(globalIndex, false)}
+                          right={2}
+                          onClick={() => handleRemoveImage(index, true)}
+                        />
+                      </Box>
+                    ))}
+                    {/* New Images */}
+                    {images.map((img, index) => (
+                      <Box key={`new-${index}`} position="relative" display="flex" flexDirection="column" alignItems="center">
+                        <Image
+                          src={img.preview}
+                          alt={t('productForm.productImage', { index: existingImages.length + index + 1 })}
+                          borderRadius="md"
+                          maxH="150px"
+                          border={mainImageIndex === existingImages.length + index ? '2px solid' : '1px solid'}
+                          borderColor={mainImageIndex === existingImages.length + index ? 'brand.500' : 'gray.300'}
+                          cursor="pointer"
+                          onClick={() => handleSetMainImage(existingImages.length + index)}
+                        />
+                        {mainImageIndex === existingImages.length + index && (
+                          <Badge position="absolute" top={2} left={2} colorScheme="brand">
+                            {t('productForm.main')}
+                          </Badge>
+                        )}
+                        <IconButton
+                          icon={<FaTrash />}
+                          aria-label={t('common.removeImage')}
+                          size="sm"
+                          colorScheme="red"
+                          position="absolute"
+                          top={2}
+                          right={2}
+                          onClick={() => handleRemoveImage(index, false)}
+                        />
+                      </Box>
+                    ))}
+                  </SimpleGrid>
+                ) : (
+                  <>
+                    <Icon as={FaUpload} w={8} h={8} color="#422afb" mb={2} />
+                    <Text color="gray.500" mb={2}>
+                      {t('productForm.dragDropImageHere')}
+                    </Text>
+                    <Text color="gray.500" mb={2}>
+                      {t('productForm.or')}
+                    </Text>
+                    <Button
+                      variant="outline"
+                      color="#422afb"
+                      border="none"
+                      onClick={() => document.getElementById('file-upload').click()}
+                    >
+                      {t('productForm.uploadImage')}
+                      <input
+                        type="file"
+                        id="file-upload"
+                        hidden
+                        accept="image/*"
+                        multiple
+                        onChange={(e) => handleImageUpload(e.target.files)}
                       />
-                    </Box>
-                  );
-                })}
-              </SimpleGrid>
-            )}
+                    </Button>
+                  </>
+                )}
+              </Box>
+            </FormControl>
           </Box>
 
           {/* Submit Buttons */}
           <Flex justify="flex-end" gap={4}>
-            <Button variant="outline" colorScheme="red" onClick={handleCancel}>
-              {isRTL ? 'إلغاء' : 'Cancel'}
+            <Button 
+              variant="outline" 
+              colorScheme="red" 
+              onClick={handleCancel}
+              isDisabled={isUpdating}
+            >
+              {t('common.cancel')}
             </Button>
-            <Button type="submit" colorScheme="blue" isLoading={isUpdating}>
-              {isRTL ? 'تحديث المنتج' : 'Update Product'}
+            <Button 
+              type="submit" 
+              colorScheme="blue" 
+              isLoading={isUpdating}
+              isDisabled={isUpdating}
+              loadingText={t('common.saving')}
+            >
+              {t('common.update')}
             </Button>
           </Flex>
         </form>
       </Box>
-    </Flex>
+    </Box>
   );
 };
 

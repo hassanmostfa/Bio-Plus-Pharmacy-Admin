@@ -25,6 +25,7 @@ import {
   useDisclosure,
   useToast,
   Badge,
+  Skeleton,
 } from '@chakra-ui/react';
 import {
   createColumnHelper,
@@ -42,6 +43,7 @@ import { CgAssign } from 'react-icons/cg';
 import { CiSearch } from "react-icons/ci";
 import { AiFillMedicineBox } from "react-icons/ai";
 import { useTranslation } from 'react-i18next';
+import Pagination from "theme/components/Pagination";
 
 import { useGetPrescriptionsQuery, useUpdatePrescriptionStatusMutation } from "api/prescription";
 
@@ -54,10 +56,30 @@ const Prescriptions = () => {
   const { isOpen, onOpen, onClose } = useDisclosure();
   const [selectedPrescription, setSelectedPrescription] = React.useState(null);
   const [statusFilter, setStatusFilter] = React.useState('');
+  const [searchTerm, setSearchTerm] = React.useState('');
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = React.useState('');
+  const [page, setPage] = React.useState(1);
+  const [limit, setLimit] = React.useState(10);
   const { t } = useTranslation();
 
-  // Fetch prescriptions from API
-  const { data: apiResponse, isLoading, isError, refetch } = useGetPrescriptionsQuery();
+  // Debounce search term to avoid too many API calls
+  React.useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+      setPage(1); // Reset to first page when searching
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
+
+  // Fetch prescriptions from API with search and pagination parameters
+  const { data: apiResponse, isLoading, isError, refetch } = useGetPrescriptionsQuery({
+    page,
+    limit,
+    search: debouncedSearchTerm,
+    status: statusFilter,
+    pharmacyId: JSON.parse(localStorage.getItem('pharmacy')).id
+  });
   const [updateStatus] = useUpdatePrescriptionStatusMutation();
 
   const textColor = useColorModeValue('secondaryGray.900', 'white');
@@ -78,11 +100,24 @@ const Prescriptions = () => {
     }));
   }, [apiResponse]);
 
-  // Filter data based on status
-  const filteredData = React.useMemo(() => {
-    if (!statusFilter) return prescriptionsData;
-    return prescriptionsData.filter(item => item.status === statusFilter);
-  }, [prescriptionsData, statusFilter]);
+  // Extract pagination data from response
+  const pagination = apiResponse?.data?.meta || {
+    page: 1,
+    limit: 10,
+    total: 0,
+    totalPages: 1
+  };
+
+  // Handle page change
+  const handlePageChange = React.useCallback((newPage) => {
+    setPage(newPage);
+  }, []);
+
+  // Handle status filter change
+  const handleStatusFilterChange = React.useCallback((newStatus) => {
+    setStatusFilter(newStatus);
+    setPage(1); // Reset to first page when filtering
+  }, []);
 
   const columns = [
     columnHelper.accessor('user', {
@@ -188,7 +223,7 @@ const Prescriptions = () => {
   ];
 
   const table = useReactTable({
-    data: filteredData,
+    data: prescriptionsData,
     columns,
     state: {
       sorting,
@@ -198,7 +233,6 @@ const Prescriptions = () => {
     getSortedRowModel: getSortedRowModel(),
   });
 
-  if (isLoading) return <Text>{t('prescriptions.loading')}</Text>;
   if (isError) return <Text>{t('prescriptions.errorLoading')}</Text>;
 
   return (
@@ -231,6 +265,8 @@ const Prescriptions = () => {
                 borderColor="gray.200"
                 _hover={{ borderColor: "gray.400" }}
                 borderRadius={"15px"}
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
               />
             </InputGroup>
             
@@ -239,7 +275,7 @@ const Prescriptions = () => {
               width="300px"
               background={"gray.100"}
               value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value || '')}
+              onChange={(e) => handleStatusFilterChange(e.target.value || '')}
               variant="outline"
               fontSize="sm"
               border="1px solid"
@@ -257,59 +293,87 @@ const Prescriptions = () => {
         </Flex>
         
         <Box>
-          <Table variant="simple" color="gray.500" mb="24px" mt="12px">
-            <Thead>
-              {table.getHeaderGroups().map((headerGroup) => (
-                <Tr key={headerGroup.id}>
-                  {headerGroup.headers.map((header) => (
-                    <Th
-                      key={header.id}
-                      colSpan={header.colSpan}
-                      pe="10px"
-                      borderColor={borderColor}
-                      cursor="pointer"
-                      onClick={header.column.getToggleSortingHandler()}
-                    >
-                      <Flex
-                        justifyContent="space-between"
-                        align="center"
-                        fontSize={{ sm: '10px', lg: '12px' }}
-                        color="gray.400"
-                      >
-                        {flexRender(
-                          header.column.columnDef.header,
-                          header.getContext(),
-                        )}
-                        {{
-                          asc: ' 🔼',
-                          desc: ' 🔽',
-                        }[header.column.getIsSorted()] ?? null}
-                      </Flex>
-                    </Th>
-                  ))}
-                </Tr>
+          {isLoading ? (
+            <Box p="20px">
+              {[...Array(5)].map((_, i) => (
+                <Skeleton key={i} height="40px" mb="10px" />
               ))}
-            </Thead>
-            <Tbody>
-              {table.getRowModel().rows.map((row) => (
-                <Tr key={row.id}>
-                  {row.getVisibleCells().map((cell) => (
-                    <Td
-                      key={cell.id}
-                      fontSize={{ sm: '14px' }}
-                      minW={{ sm: '150px', md: '200px', lg: 'auto' }}
-                      borderColor="transparent"
-                    >
-                      {flexRender(
-                        cell.column.columnDef.cell,
-                        cell.getContext(),
-                      )}
-                    </Td>
+            </Box>
+          ) : (
+            <>
+              <Table variant="simple" color="gray.500" mb="24px" mt="12px">
+                <Thead>
+                  {table.getHeaderGroups().map((headerGroup) => (
+                    <Tr key={headerGroup.id}>
+                      {headerGroup.headers.map((header) => (
+                        <Th
+                          key={header.id}
+                          colSpan={header.colSpan}
+                          pe="10px"
+                          borderColor={borderColor}
+                          cursor="pointer"
+                          onClick={header.column.getToggleSortingHandler()}
+                        >
+                          <Flex
+                            justifyContent="space-between"
+                            align="center"
+                            fontSize={{ sm: '10px', lg: '12px' }}
+                            color="gray.400"
+                          >
+                            {flexRender(
+                              header.column.columnDef.header,
+                              header.getContext(),
+                            )}
+                            {{
+                              asc: ' 🔼',
+                              desc: ' 🔽',
+                            }[header.column.getIsSorted()] ?? null}
+                          </Flex>
+                        </Th>
+                      ))}
+                    </Tr>
                   ))}
-                </Tr>
-              ))}
-            </Tbody>
-          </Table>
+                </Thead>
+                <Tbody>
+                  {table.getRowModel().rows.map((row) => (
+                    <Tr key={row.id}>
+                      {row.getVisibleCells().map((cell) => (
+                        <Td
+                          key={cell.id}
+                          fontSize={{ sm: '14px' }}
+                          minW={{ sm: '150px', md: '200px', lg: 'auto' }}
+                          borderColor="transparent"
+                        >
+                          {flexRender(
+                            cell.column.columnDef.cell,
+                            cell.getContext(),
+                          )}
+                        </Td>
+                      ))}
+                    </Tr>
+                  ))}
+                </Tbody>
+              </Table>
+              
+              {/* Pagination */}
+              {pagination.totalPages > 1 && (
+                <Flex justifyContent="center" mt={4} pb={4}>
+                  <Pagination
+                    currentPage={pagination.page}
+                    totalPages={pagination.totalPages}
+                    onPageChange={handlePageChange}
+                  />
+                </Flex>
+              )}
+              
+              {/* Show total items count */}
+              <Flex justifyContent="center" mt={2} pb={2}>
+                <Text color="gray.500" fontSize="sm">
+                  {t('prescriptions.showing')} {((pagination.page - 1) * pagination.limit) + 1} - {Math.min(pagination.page * pagination.limit, pagination.total)} {t('prescriptions.of')} {pagination.total} {t('prescriptions.prescriptions')}
+                </Text>
+              </Flex>
+            </>
+          )}
         </Box>
       </Card>
     </div>
