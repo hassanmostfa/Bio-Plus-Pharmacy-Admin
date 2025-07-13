@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   Box,
   Flex,
@@ -31,7 +31,6 @@ import {
   getCoreRowModel,
   getSortedRowModel,
   useReactTable,
-  getFilteredRowModel,
 } from "@tanstack/react-table";
 import { FaEye, FaTrash, FaFileExport, FaFileImport, FaDownload, FaUpload } from "react-icons/fa6";
 import { EditIcon, PlusSquareIcon, ChevronDownIcon } from "@chakra-ui/icons";
@@ -49,8 +48,26 @@ const columnHelper = createColumnHelper();
 const Products = () => {
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
-  const [globalFilter, setGlobalFilter] = useState('');
-  const { data: productsResponse, isLoading, isFetching, refetch } = useGetProductsQuery({ page, limit,pharmacyId: JSON.parse(localStorage.getItem('pharmacy')).id });
+  const [searchTerm, setSearchTerm] = useState('');
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
+  
+  // Debounce search term to avoid too many API calls
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+      setPage(1); // Reset to first page when searching
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
+
+  const { data: productsResponse, isLoading, isFetching, refetch } = useGetProductsQuery({ 
+    page, 
+    limit,
+    search: debouncedSearchTerm, // Add search parameter
+    pharmacyId: JSON.parse(localStorage.getItem('pharmacy')).id 
+  });
+  
   const [deleteProduct] = useDeleteProductMutation();
   const [updateProduct] = useUpdateProductMutation();
   const navigate = useNavigate();
@@ -211,6 +228,11 @@ const Products = () => {
     reader.readAsArrayBuffer(file);
   };
 
+  // Handle page change
+  const handlePageChange = useCallback((newPage) => {
+    setPage(newPage);
+  }, []);
+
   // Determine if RTL
   const isRTL = i18n.language === 'ar';
 
@@ -303,14 +325,8 @@ const Products = () => {
   const table = useReactTable({
     data: products,
     columns,
-    state: {
-      globalFilter,
-    },
-    onGlobalFilterChange: setGlobalFilter,
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
-    getFilteredRowModel: getFilteredRowModel(),
-    globalFilterFn: 'includesString',
   });
 
   return (
@@ -352,17 +368,6 @@ const Products = () => {
                 <MenuItem icon={<FaDownload />} onClick={exportToExcel}>
                   {t('products.exportExcel')}
                 </MenuItem>
-                <MenuItem icon={<FaDownload />} onClick={() => {
-                  const dataStr = JSON.stringify(products, null, 2);
-                  const blob = new Blob([dataStr], { type: 'application/json' });
-                  const url = URL.createObjectURL(blob);
-                  const link = document.createElement('a');
-                  link.href = url;
-                  link.download = 'products.json';
-                  link.click();
-                }}>
-                  {t('products.exportJson')}
-                </MenuItem>
               </MenuList>
             </Menu>
             
@@ -396,8 +401,8 @@ const Products = () => {
             </InputLeftElement>
             <Input
               placeholder={t('products.searchPlaceholder')}
-              value={globalFilter ?? ''}
-              onChange={(e) => setGlobalFilter(e.target.value)}
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
               borderRadius="20px"
             />
           </InputGroup>
@@ -443,10 +448,17 @@ const Products = () => {
                   <Pagination
                     currentPage={pagination.page}
                     totalPages={pagination.totalPages}
-                    onPageChange={(newPage) => setPage(newPage)}
+                    onPageChange={handlePageChange}
                   />
                 </Flex>
               )}
+              
+              {/* Show total items count */}
+              <Flex justifyContent="center" mt={2} pb={2}>
+                <Text color="gray.500" fontSize="sm">
+                  {t('products.showing')} {((pagination.page - 1) * pagination.limit) + 1} - {Math.min(pagination.page * pagination.limit, pagination.totalItems)} {t('products.of')} {pagination.totalItems} {t('products.products')}
+                </Text>
+              </Flex>
             </>
           )}
         </Box>
