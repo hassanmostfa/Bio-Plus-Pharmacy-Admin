@@ -40,12 +40,7 @@ function SignIn() {
   const [loginUser, { isError, error: apiError }] = useLoginUserMutation();
   const [show, setShow] = useState(false);
 
-  // Sync i18next language with context
-  React.useEffect(() => {
-    if (i18n.language !== language) {
-      i18n.changeLanguage(language);
-    }
-  }, [language]);
+  // Language is now handled by LanguageContext
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });

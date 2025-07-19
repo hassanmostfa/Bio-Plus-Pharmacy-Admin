@@ -12,14 +12,16 @@ import {
 	Button,
   } from '@chakra-ui/react';
   import PropTypes from 'prop-types';
-  import React, { useState, useEffect } from 'react';
-  import AdminNavbarLinks from 'components/navbar/NavbarLinksAdmin';
-  import { removeIdFromRoute } from './RemoveIdFromRoute'; // Import the utility function
-  import { useTranslation } from 'react-i18next';
+  import React, { useState, useEffect, useContext } from 'react';
+import AdminNavbarLinks from 'components/navbar/NavbarLinksAdmin';
+import { removeIdFromRoute } from './RemoveIdFromRoute'; // Import the utility function
+import { useTranslation } from 'react-i18next';
+import { LanguageContext } from '../auth/LanguageContext';
   
   export default function AdminNavbar(props) {
 	const [scrolled, setScrolled] = useState(false);
 	const { i18n, t } = useTranslation();
+	const { language, toggleLanguage } = useContext(LanguageContext);
   
 	useEffect(() => {
 	  window.addEventListener('scroll', changeNavbar);
@@ -141,14 +143,14 @@ import {
 		</Flex>
 		{secondary ? <Text color="white">{message}</Text> : null}
 		<Menu>
-		  <MenuButton as={Button} variant="outline" size="sm" ml={4} leftIcon={<span>{i18n.language === 'ar' ? '🇸🇦' : '🇺🇸'}</span>}>
-			{i18n.language === 'ar' ? 'العربية' : 'English'}
+		  <MenuButton as={Button} variant="outline" size="sm" ml={4} leftIcon={<span>{language === 'ar' ? '🇸🇦' : '🇺🇸'}</span>}>
+			{language === 'ar' ? 'العربية' : 'English'}
 		  </MenuButton>
 		  <MenuList minW="120px">
-			<MenuItem icon={<span role="img" aria-label="English">🇺🇸</span>} onClick={() => i18n.changeLanguage('en')}>
+			<MenuItem icon={<span role="img" aria-label="English">🇺🇸</span>} onClick={toggleLanguage}>
 			  English
 			</MenuItem>
-			<MenuItem icon={<span role="img" aria-label="Arabic">🇸🇦</span>} onClick={() => i18n.changeLanguage('ar')}>
+			<MenuItem icon={<span role="img" aria-label="Arabic">🇸🇦</span>} onClick={toggleLanguage}>
 			  العربية
 			</MenuItem>
 		  </MenuList>

@@ -68,7 +68,7 @@ const EditPromoCode = () => {
           isActive: foundPromo.isActive,
         });
       } else {
-        Swal.fire('Error!', 'Promo code not found.', 'error');
+        Swal.fire(t('common.error'), t('promocode.notFound'), 'error');
         navigate('/admin/promo-codes');
       }
     }
@@ -112,13 +112,13 @@ const EditPromoCode = () => {
         }
       }).unwrap();
 
-      Swal.fire('Success!', 'Promo code updated successfully.', 'success');
+      Swal.fire(t('common.success'), t('promocode.successEdit'), 'success');
       navigate('/admin/promo-codes');
     } catch (error) {
       console.error('Failed to update promo code:', error);
       Swal.fire(
-        'Error!',
-        error.data?.message || 'Failed to update promo code.',
+        t('common.error'),
+        error.data?.message || t('promocode.error'),
         'error'
       );
     }
@@ -211,7 +211,7 @@ const EditPromoCode = () => {
                   textAlign="left"
                   mt={'8px'}
                 >
-                  {formData.type === 'FIXED' ? 'Fixed Amount' : 'Percentage'}
+                  {formData.type === 'FIXED' ? t('promocode.fixed') : t('promocode.percentage')}
                 </MenuButton>
                 <MenuList width="100%" bg={inputBg}>
                   <MenuItem
@@ -219,14 +219,14 @@ const EditPromoCode = () => {
                     bg={formData.type === 'FIXED' ? selectedBg : inputBg}
                     color={inputTextColor}
                   >
-                    Fixed Amount
+                    {t('promocode.fixed')}
                   </MenuItem>
                   <MenuItem
                     onClick={() => handleSelectType('PERCENTAGE')}
                     bg={formData.type === 'PERCENTAGE' ? selectedBg : inputBg}
                     color={inputTextColor}
                   >
-                    Percentage
+                    {t('promocode.percentage')}
                   </MenuItem>
                 </MenuList>
               </Menu>

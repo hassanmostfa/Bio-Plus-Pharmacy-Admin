@@ -31,6 +31,27 @@ const resources = {
         characters: 'characters',
         areYouSure: 'Are you sure?',
         yesDiscardChanges: 'Yes, discard changes',
+        noRevert: "You won't be able to revert this!",
+        yesDeleteIt: 'Yes, delete it!',
+        deleted: 'Deleted!',
+        promoCodeDeleted: 'Promo code has been deleted.',
+        failedDeletePromoCode: 'Failed to delete promo code.',
+        code: 'Code',
+        type: 'Type',
+        amount: 'Amount',
+        endDate: 'End Date',
+        maxUsage: 'Max Usage',
+        used: 'Used',
+        status: 'Status',
+        actions: 'Actions',
+        search: 'Search...',
+        rowsPerPage: 'Rows per page:',
+        page: 'Page',
+        of: 'of',
+        previous: 'Previous',
+        next: 'Next',
+        promoCodes: 'Promo Codes',
+        addPromoCode: 'Add Promo Code',
       },
       forms: {
         priceRequired: 'Price is required',
@@ -394,6 +415,9 @@ const resources = {
         createPromoCode: 'Create Promo Code',
         saveChanges: 'Save Changes',
         saving: 'Saving...',
+        statusActivated: 'Promo code activated successfully.',
+        statusDeactivated: 'Promo code deactivated successfully.',
+        failedStatusUpdate: 'Failed to update promo code status.',
       },
       deliveryFees: {
         title: 'Delivery Fee Settings',
@@ -441,6 +465,27 @@ const resources = {
         characters: 'حرف',
         areYouSure: 'هل أنت متأكد؟',
         yesDiscardChanges: 'نعم، تجاهل التغييرات',
+        noRevert: 'لن تتمكن من التراجع عن هذا!',
+        yesDeleteIt: 'نعم، احذفه!',
+        deleted: 'تم الحذف!',
+        promoCodeDeleted: 'تم حذف رمز الخصم.',
+        failedDeletePromoCode: 'فشل حذف رمز الخصم.',
+        code: 'الرمز',
+        type: 'النوع',
+        amount: 'القيمة',
+        endDate: 'تاريخ الانتهاء',
+        maxUsage: 'الحد الأقصى للاستخدام',
+        used: 'تم الاستخدام',
+        status: 'الحالة',
+        actions: 'الإجراءات',
+        search: 'ابحث...',
+        rowsPerPage: 'صفوف في الصفحة:',
+        page: 'صفحة',
+        of: 'من',
+        previous: 'السابق',
+        next: 'التالي',
+        promoCodes: 'رموز الخصم',
+        addPromoCode: 'إضافة رمز خصم',
       },
       forms: {
         priceRequired: 'السعر مطلوب',
@@ -803,6 +848,9 @@ const resources = {
         createPromoCode: 'إنشاء رمز خصم',
         saveChanges: 'حفظ التغييرات',
         saving: 'جاري الحفظ...',
+        statusActivated: 'تم تفعيل رمز الخصم بنجاح.',
+        statusDeactivated: 'تم إلغاء تفعيل رمز الخصم بنجاح.',
+        failedStatusUpdate: 'فشل تحديث حالة رمز الخصم.',
       },
       deliveryFees: {
         title: 'إعدادات رسوم التوصيل',
@@ -823,15 +871,24 @@ const resources = {
   },
 };
 
+// Get saved language from localStorage or default to 'en'
+// This ensures language preference persists across browser sessions and login/logout cycles
+const savedLanguage = localStorage.getItem('i18n_language') || 'en';
+
 i18n
   .use(initReactI18next)
   .init({
     resources,
-    lng: 'en', // default language
+    lng: savedLanguage, // Use saved language or default to 'en'
     fallbackLng: 'en',
     interpolation: {
       escapeValue: false,
     },
   });
+
+// Listen for language changes and save to localStorage
+i18n.on('languageChanged', (lng) => {
+  localStorage.setItem('i18n_language', lng);
+});
 
 export default i18n; 
