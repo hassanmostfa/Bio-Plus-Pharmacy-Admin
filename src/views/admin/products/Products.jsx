@@ -36,7 +36,7 @@ import { FaEye, FaTrash, FaFileExport, FaFileImport, FaDownload, FaUpload } from
 import { EditIcon, PlusSquareIcon, ChevronDownIcon } from "@chakra-ui/icons";
 import {FaSearch} from 'react-icons/fa';
 import { useNavigate } from "react-router-dom";
-import { useGetProductsQuery, useDeleteProductMutation, useUpdateProductMutation } from "api/productSlice";
+import { useGetProductsQuery, useDeleteProductMutation, useUpdateProductMutation, useGetBulkUploadTemplateQuery } from "api/productSlice";
 import Swal from "sweetalert2";
 import Pagination from "theme/components/Pagination";
 import * as XLSX from 'xlsx';
@@ -73,6 +73,9 @@ const Products = () => {
   const navigate = useNavigate();
   const toast = useToast();
   const { t } = useTranslation();
+
+  // Bulk upload template hook
+  const { data: templateBlob, isLoading: isTemplateLoading } = useGetBulkUploadTemplateQuery();
 
   const textColor = useColorModeValue("secondaryGray.900", "white");
   const borderColor = useColorModeValue("gray.200", "whiteAlpha.100");
@@ -228,6 +231,28 @@ const Products = () => {
     reader.readAsArrayBuffer(file);
   };
 
+  // Download template function
+  const handleDownloadTemplate = () => {
+    if (templateBlob) {
+      const url = window.URL.createObjectURL(templateBlob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'product-bulk-upload-template.xlsx';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+      
+      toast({
+        title: t('products.templateDownloaded'),
+        description: t('products.templateDownloadedMsg'),
+        status: "success",
+        duration: 3000,
+        isClosable: true,
+      });
+    }
+  };
+
   // Handle page change
   const handlePageChange = useCallback((newPage) => {
     setPage(newPage);
@@ -371,6 +396,7 @@ const Products = () => {
               </MenuList>
             </Menu>
             
+           
             <Box ml={isRTL ? 2 : 0} mr={!isRTL ? 2 : 0} position="relative">
               <Button
                 as="label"
@@ -390,6 +416,24 @@ const Products = () => {
                 />
               </Button>
             </Box>
+
+            <Button
+              variant="darkBrand"
+              color="white"
+              fontSize="sm"
+              fontWeight="500"
+              borderRadius="70px"
+              px="24px"
+              py="5px"
+              leftIcon={<FaDownload />}
+              onClick={handleDownloadTemplate}
+              isLoading={isTemplateLoading}
+              isDisabled={!templateBlob}
+              ml={isRTL ? 2 : 0} mr={!isRTL ? 2 : 0}
+            >
+              {t('products.downloadTemplate')}
+            </Button>
+            
           </Flex>
         </Flex>
         

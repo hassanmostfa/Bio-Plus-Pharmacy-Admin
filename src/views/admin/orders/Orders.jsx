@@ -384,6 +384,20 @@ const Orders = () => {
             >
               {t('orders.printSelected')}
             </Button>
+            <Button
+              variant="darkBrand"
+              color="white"
+              fontSize="sm"
+              fontWeight="500"
+              borderRadius="70px"
+              px="24px"
+              py="5px"
+              width={'200px'}
+              onClick={() => navigate('/admin/add-order')}
+              leftIcon={<IoMdPrint />}
+            >
+              {t('Make Order')}
+            </Button>
           </Box>
         </Flex>
 

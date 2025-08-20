@@ -10,7 +10,7 @@ const DeliveryFees = () => {
   const textColor = useColorModeValue("secondaryGray.900", "white");
   const pharmacy = localStorage.getItem('pharmacy');
   const pharmacyId = pharmacy ? JSON.parse(pharmacy).id : null;
-  const { data: pharmacyData, isLoading: isFetching, error: fetchError } = useGetPharmacyQuery(pharmacyId);
+  const { data: pharmacyData, isLoading: isFetching, error: fetchError , refetch } = useGetPharmacyQuery(pharmacyId);
   const { t } = useTranslation();
   const isRTL = i18n.language === 'ar';
 
@@ -26,6 +26,10 @@ const DeliveryFees = () => {
       setDeliveryFee(pharmacyData.data.deliveryFee?.toString() || "");
     }
   }, [pharmacyData]);
+
+  useEffect(() => {
+    refetch();
+  }, [refetch]);
 
   const handleInputChange = (e) => {
     setDeliveryFee(e.target.value);

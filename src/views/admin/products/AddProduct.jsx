@@ -24,7 +24,7 @@ import {
   FormControl,
   FormLabel,
 } from '@chakra-ui/react';
-import { FaUpload, FaTrash } from 'react-icons/fa6';
+import { FaUpload, FaTrash, FaArrowUp, FaArrowDown } from 'react-icons/fa6';
 import { IoMdArrowBack } from 'react-icons/io';
 import { useNavigate } from 'react-router-dom';
 import { useGetVarientsQuery } from 'api/varientSlice';
@@ -124,31 +124,70 @@ const AddProduct = () => {
           return {
             file,
             preview: URL.createObjectURL(file),
-            isMain: images.length === 0,
+            id: Date.now() + Math.random(), // Unique ID for each image
           };
         })
         .filter((img) => img !== null);
 
-      setImages([...images, ...newImages]);
-      if (images.length === 0 && newImages.length > 0) {
-        setMainImageIndex(0);
-      }
-    }
-  };
-
-  const handleRemoveImage = (index) => {
-    URL.revokeObjectURL(images[index].preview);
-    const newImages = images.filter((_, i) => i !== index);
-    setImages(newImages);
-    if (mainImageIndex === index) {
+      const updatedImages = [...images, ...newImages];
+      setImages(updatedImages);
+      
+      // Always set the first image (order 1) as main image
       setMainImageIndex(0);
-    } else if (mainImageIndex > index) {
-      setMainImageIndex(mainImageIndex - 1);
     }
   };
 
-  const handleSetMainImage = (index) => {
-    setMainImageIndex(index);
+  const handleRemoveImage = (imageId) => {
+    const imageToRemove = images.find(img => img.id === imageId);
+    if (imageToRemove) {
+      URL.revokeObjectURL(imageToRemove.preview);
+    }
+    const newImages = images.filter(img => img.id !== imageId);
+    setImages(newImages);
+    
+    // Always set the first image (order 1) as main image after removal
+    if (newImages.length > 0) {
+      setMainImageIndex(0);
+    } else {
+      setMainImageIndex(0);
+    }
+  };
+
+  const handleSetMainImage = (imageId) => {
+    const index = images.findIndex(img => img.id === imageId);
+    if (index !== -1) {
+      // Move the selected image to first position and set as main
+      const newImages = [...images];
+      const selectedImage = newImages.splice(index, 1)[0];
+      newImages.unshift(selectedImage);
+      setImages(newImages);
+      setMainImageIndex(0);
+    }
+  };
+
+  // Reorder images
+  const moveImage = (imageId, direction) => {
+    const currentIndex = images.findIndex(img => img.id === imageId);
+    if (currentIndex === -1) return;
+
+    const newImages = [...images];
+    let newIndex;
+
+    if (direction === 'up' && currentIndex > 0) {
+      newIndex = currentIndex - 1;
+    } else if (direction === 'down' && currentIndex < newImages.length - 1) {
+      newIndex = currentIndex + 1;
+    } else {
+      return; // Can't move in that direction
+    }
+
+    // Swap images
+    [newImages[currentIndex], newImages[newIndex]] = [newImages[newIndex], newImages[currentIndex]];
+    
+    setImages(newImages);
+    
+    // Always set the first image (order 1) as main image after reordering
+    setMainImageIndex(0);
   };
 
   const handleDragOver = (e) => {
@@ -1046,7 +1085,7 @@ const AddProduct = () => {
                 {images.length > 0 ? (
                   <SimpleGrid columns={{ base: 2, md: 4 }} spacing={4}>
                     {images.map((img, index) => (
-                      <Box key={index} position="relative" display="flex" flexDirection="column" alignItems="center">
+                      <Box key={img.id} position="relative" display="flex" flexDirection="column" alignItems="center">
                         <Image
                           src={img.preview}
                           alt={t('productForm.productImage', { index: index + 1 })}
@@ -1055,23 +1094,51 @@ const AddProduct = () => {
                           border={mainImageIndex === index ? '2px solid' : '1px solid'}
                           borderColor={mainImageIndex === index ? 'brand.500' : 'gray.300'}
                           cursor="pointer"
-                          onClick={() => handleSetMainImage(index)}
+                          onClick={() => handleSetMainImage(img.id)}
                         />
                         {mainImageIndex === index && (
                           <Badge position="absolute" top={2} left={2} colorScheme="brand">
                             {t('productForm.main')}
                           </Badge>
                         )}
-                        <IconButton
-                          icon={<FaTrash />}
-                          aria-label={t('common.removeImage')}
-                          size="sm"
-                          colorScheme="red"
-                          position="absolute"
-                          top={2}
-                          right={2}
-                          onClick={() => handleRemoveImage(index)}
-                        />
+                        
+                        {/* Image Controls */}
+                        <Flex position="absolute" top={2} right={2} gap={1}>
+                          <IconButton
+                            icon={<FaTrash />}
+                            aria-label={t('common.removeImage')}
+                            size="sm"
+                            colorScheme="red"
+                            onClick={() => handleRemoveImage(img.id)}
+                          />
+                        </Flex>
+                        
+                        {/* Reorder Controls */}
+                        <Flex position="absolute" bottom={2} right={2} gap={1}>
+                          <IconButton
+                            icon={<FaArrowUp />}
+                            aria-label="Move up"
+                            size="sm"
+                            colorScheme="blue"
+                            variant="solid"
+                            isDisabled={index === 0}
+                            onClick={() => moveImage(img.id, 'up')}
+                          />
+                          <IconButton
+                            icon={<FaArrowDown />}
+                            aria-label="Move down"
+                            size="sm"
+                            colorScheme="blue"
+                            variant="solid"
+                            isDisabled={index === images.length - 1}
+                            onClick={() => moveImage(img.id, 'down')}
+                          />
+                        </Flex>
+                        
+                        {/* Image Order Badge */}
+                        <Badge position="absolute" bottom={2} left={2} colorScheme="gray">
+                          {index + 1}
+                        </Badge>
                       </Box>
                     ))}
                   </SimpleGrid>

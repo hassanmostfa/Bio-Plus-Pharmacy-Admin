@@ -5,6 +5,7 @@ import {
   MdOutlineShoppingCart,
   MdInventory,
   MdAssignment,
+  MdBarChart,
 } from 'react-icons/md';
 
 import { MdAdminPanelSettings } from 'react-icons/md';
@@ -26,6 +27,7 @@ import EditRole from 'views/admin/roles/EditRole';
 import EditAdmin from 'views/admin/admins/EditAdmin';
 import ShowAdmin from 'views/admin/admins/ShowAdmin';
 import Orders from 'views/admin/orders/Orders';
+import AddOrder from 'views/admin/orders/AddOrder';
 import Products from 'views/admin/products/Products';
 import ShowProduct from 'views/admin/products/ShowProduct';
 import EditProduct from 'views/admin/products/EditProduct';
@@ -35,7 +37,7 @@ import AddPromoCode from 'views/admin/promoCodes/AddPromoCode';
 import EditPromoCode from 'views/admin/promoCodes/EditPromoCode';
 import { CiDiscount1 } from 'react-icons/ci';
 import DeliveryFees from 'views/admin/deliveryFees/DeliveryFees';
-
+import Reports from 'views/admin/reports/Reports';
 
 const routes = [
   {
@@ -166,6 +168,13 @@ const routes = [
     showInSidebar: true,
   },
   {
+    name: 'sidebar.orders',
+    layout: '/admin',
+    path: '/add-order',
+    component: <AddOrder />,
+    showInSidebar: false,
+  },
+  {
     name: 'sidebar.prescription',
     layout: '/admin',
     path: '/prescription',
@@ -209,6 +218,14 @@ const routes = [
     path: '/delivery-fees',
     icon: <Icon as={FaMoneyBill1} width="20px" height="20px" color="inherit" />,
     component: <DeliveryFees />,
+    showInSidebar: true,
+  },
+  {
+    name: 'Reports',
+    layout: '/admin',
+    path: '/reports',
+    icon: <Icon as={MdBarChart} width="20px" height="20px" color="inherit" />,
+    component: <Reports />,
     showInSidebar: true,
   },
   {

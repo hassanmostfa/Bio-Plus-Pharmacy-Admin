@@ -52,6 +52,12 @@ export const ProductApi = createApi({
         method: "DELETE",
       }),
     }),
+    getBulkUploadTemplate: builder.query({
+      query: () => ({
+        url: '/admin/product-bulk-upload/template',
+        responseHandler: (response) => response.blob(),
+      }),
+    }),
   }),
 });
 
@@ -61,6 +67,7 @@ export const {
   useGetProductQuery,
   useUpdateProductMutation,
   useAddProductMutation,
-  useDeleteProductMutation
+  useDeleteProductMutation,
+  useGetBulkUploadTemplateQuery
 } = ProductApi;
 

@@ -25,7 +25,7 @@ import {
   FormLabel,
   Spinner,
 } from '@chakra-ui/react';
-import { FaUpload, FaTrash } from 'react-icons/fa6';
+import { FaUpload, FaTrash, FaArrowUp, FaArrowDown } from 'react-icons/fa6';
 import { IoMdArrowBack } from 'react-icons/io';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useGetVarientsQuery } from 'api/varientSlice';
@@ -164,8 +164,12 @@ const EditProduct = () => {
 
       // Set existing images
       if (product.images?.length > 0) {
-        setExistingImages(product.images);
-        const mainIndex = product.images.findIndex((img) => img.isMain);
+        const imagesWithIds = product.images.map((img, index) => ({
+          ...img,
+          id: img.id || `existing-${index}-${Date.now()}` // Ensure each image has a unique ID
+        }));
+        setExistingImages(imagesWithIds);
+        const mainIndex = imagesWithIds.findIndex((img) => img.isMain);
         setMainImageIndex(mainIndex >= 0 ? mainIndex : 0);
       }
 
@@ -209,45 +213,99 @@ const EditProduct = () => {
           return {
             file,
             preview: URL.createObjectURL(file),
-            isMain: images.length === 0 && existingImages.length === 0, // First image is main if no others exist
+            id: Date.now() + Math.random(), // Unique ID for each image
           };
         })
         .filter((img) => img !== null);
 
-      setImages([...images, ...newImages]);
+      const updatedImages = [...images, ...newImages];
+      setImages(updatedImages);
 
-      // Set first uploaded image as main if no main exists
-      if (
-        existingImages.length === 0 &&
-        images.length === 0 &&
-        newImages.length > 0
-      ) {
-        setMainImageIndex(0);
-      }
+      // Always set the first image (order 1) as main image
+      setMainImageIndex(0);
     }
   };
 
-  const handleRemoveImage = (index, isExisting) => {
+  const handleRemoveImage = (imageId, isExisting) => {
     if (isExisting) {
       // Mark existing image for deletion
       const updatedExistingImages = [...existingImages];
-      updatedExistingImages[index].toDelete = true;
-      setExistingImages(updatedExistingImages);
+      const index = updatedExistingImages.findIndex(img => img.id === imageId);
+      if (index !== -1) {
+        updatedExistingImages[index].toDelete = true;
+        setExistingImages(updatedExistingImages);
+      }
     } else {
       // Remove newly uploaded image
-      URL.revokeObjectURL(images[index].preview);
-      const newImages = images.filter((_, i) => i !== index);
+      const imageToRemove = images.find(img => img.id === imageId);
+      if (imageToRemove) {
+        URL.revokeObjectURL(imageToRemove.preview);
+      }
+      const newImages = images.filter(img => img.id !== imageId);
       setImages(newImages);
-      if (mainImageIndex === index) {
+      
+      // Always set the first image (order 1) as main image after removal
+      setMainImageIndex(0);
+    }
+  };
+
+  const handleSetMainImage = (imageId, isExisting) => {
+    if (isExisting) {
+      const index = existingImages.findIndex(img => img.id === imageId);
+      if (index !== -1) {
+        // Move the selected existing image to first position and set as main
+        const newExistingImages = [...existingImages];
+        const selectedImage = newExistingImages.splice(index, 1)[0];
+        newExistingImages.unshift(selectedImage);
+        setExistingImages(newExistingImages);
         setMainImageIndex(0);
-      } else if (mainImageIndex > index) {
-        setMainImageIndex(mainImageIndex - 1);
+      }
+    } else {
+      const index = images.findIndex(img => img.id === imageId);
+      if (index !== -1) {
+        // Move the selected new image to first position and set as main
+        const newImages = [...images];
+        const selectedImage = newImages.splice(index, 1)[0];
+        newImages.unshift(selectedImage);
+        setImages(newImages);
+        setMainImageIndex(0);
       }
     }
   };
 
-  const handleSetMainImage = (index) => {
-    setMainImageIndex(index);
+  // Reorder images
+  const moveImage = (imageId, direction, isExisting) => {
+    let currentImages, setCurrentImages;
+    
+    if (isExisting) {
+      currentImages = existingImages;
+      setCurrentImages = setExistingImages;
+    } else {
+      currentImages = images;
+      setCurrentImages = setImages;
+    }
+    
+    const currentIndex = currentImages.findIndex(img => img.id === imageId);
+    if (currentIndex === -1) return;
+
+    const newImages = [...currentImages];
+    let newIndex;
+
+    if (direction === 'up' && currentIndex > 0) {
+      newIndex = currentIndex - 1;
+    } else if (direction === 'down' && currentIndex < newImages.length - 1) {
+      newIndex = currentIndex + 1;
+    } else {
+      return; // Can't move in that direction
+    }
+
+    // Swap images
+    [newImages[currentIndex], newImages[newIndex]] = [newImages[newIndex], newImages[currentIndex]];
+    
+    setCurrentImages(newImages);
+    
+    // Always set the first image (order 1) as main image after reordering
+    setMainImageIndex(0);
   };
 
   const handleDragOver = (e) => {
@@ -1133,11 +1191,11 @@ const EditProduct = () => {
 
           {/* Product Images */}
           <Box mb={4}>
-            <FormControl isRequired={images.length === 0 && existingImages.length === 0}>
-              <FormLabel>
-                {t('productForm.productImages')}
-                {images.length === 0 && existingImages.length === 0 && <span style={{ color: 'red' }}>*</span>}
-              </FormLabel>
+                      <FormControl isRequired={images.length === 0 && existingImages.filter(img => !img.toDelete).length === 0}>
+            <FormLabel>
+              {t('productForm.productImages')}
+              {images.length === 0 && existingImages.filter(img => !img.toDelete).length === 0 && <span style={{ color: 'red' }}>*</span>}
+            </FormLabel>
               <Box
                 border="1px dashed"
                 borderColor={isDragging ? 'brand.500' : 'gray.300'}
@@ -1151,11 +1209,11 @@ const EditProduct = () => {
                 onDrop={handleDrop}
                 mb={4}
               >
-                {existingImages.length > 0 || images.length > 0 ? (
+                {(existingImages.filter(img => !img.toDelete).length > 0 || images.length > 0) ? (
                   <SimpleGrid columns={{ base: 2, md: 4 }} spacing={4}>
                     {/* Existing Images */}
-                    {existingImages.map((img, index) => (
-                      <Box key={`existing-${index}`} position="relative" display="flex" flexDirection="column" alignItems="center">
+                    {existingImages.filter(img => !img.toDelete).map((img, index) => (
+                      <Box key={img.id} position="relative" display="flex" flexDirection="column" alignItems="center">
                         <Image
                           src={img.imageKey}
                           alt={t('productForm.productImage', { index: index + 1 })}
@@ -1164,54 +1222,109 @@ const EditProduct = () => {
                           border={mainImageIndex === index ? '2px solid' : '1px solid'}
                           borderColor={mainImageIndex === index ? 'brand.500' : 'gray.300'}
                           cursor="pointer"
-                          onClick={() => handleSetMainImage(index)}
-                          opacity={img.toDelete ? 0.5 : 1}
+                          onClick={() => handleSetMainImage(img.id, true)}
                         />
                         {mainImageIndex === index && (
                           <Badge position="absolute" top={2} left={2} colorScheme="brand">
                             {t('productForm.main')}
                           </Badge>
                         )}
-                        <IconButton
-                          icon={<FaTrash />}
-                          aria-label={t('common.removeImage')}
-                          size="sm"
-                          colorScheme="red"
-                          position="absolute"
-                          top={2}
-                          right={2}
-                          onClick={() => handleRemoveImage(index, true)}
-                        />
+                        
+                        {/* Image Controls */}
+                        <Flex position="absolute" top={2} right={2} gap={1}>
+                          <IconButton
+                            icon={<FaTrash />}
+                            aria-label={t('common.removeImage')}
+                            size="sm"
+                            colorScheme="red"
+                            onClick={() => handleRemoveImage(img.id, true)}
+                          />
+                        </Flex>
+                        
+                        {/* Reorder Controls */}
+                        <Flex position="absolute" bottom={2} right={2} gap={1}>
+                          <IconButton
+                            icon={<FaArrowUp />}
+                            aria-label="Move up"
+                            size="sm"
+                            colorScheme="blue"
+                            variant="solid"
+                            isDisabled={index === 0}
+                            onClick={() => moveImage(img.id, 'up', true)}
+                          />
+                          <IconButton
+                            icon={<FaArrowDown />}
+                            aria-label="Move down"
+                            size="sm"
+                            colorScheme="blue"
+                            variant="solid"
+                            isDisabled={index === existingImages.filter(img => !img.toDelete).length - 1}
+                            onClick={() => moveImage(img.id, 'down', true)}
+                          />
+                        </Flex>
+                        
+                        {/* Image Order Badge */}
+                        <Badge position="absolute" bottom={2} left={2} colorScheme="gray">
+                          {index + 1}
+                        </Badge>
                       </Box>
                     ))}
                     {/* New Images */}
                     {images.map((img, index) => (
-                      <Box key={`new-${index}`} position="relative" display="flex" flexDirection="column" alignItems="center">
+                      <Box key={img.id} position="relative" display="flex" flexDirection="column" alignItems="center">
                         <Image
                           src={img.preview}
-                          alt={t('productForm.productImage', { index: existingImages.length + index + 1 })}
+                          alt={t('productForm.productImage', { index: existingImages.filter(img => !img.toDelete).length + index + 1 })}
                           borderRadius="md"
                           maxH="150px"
-                          border={mainImageIndex === existingImages.length + index ? '2px solid' : '1px solid'}
-                          borderColor={mainImageIndex === existingImages.length + index ? 'brand.500' : 'gray.300'}
+                          border={mainImageIndex === existingImages.filter(img => !img.toDelete).length + index ? '2px solid' : '1px solid'}
+                          borderColor={mainImageIndex === existingImages.filter(img => !img.toDelete).length + index ? 'brand.500' : 'gray.300'}
                           cursor="pointer"
-                          onClick={() => handleSetMainImage(existingImages.length + index)}
+                          onClick={() => handleSetMainImage(img.id, false)}
                         />
-                        {mainImageIndex === existingImages.length + index && (
+                        {mainImageIndex === existingImages.filter(img => !img.toDelete).length + index && (
                           <Badge position="absolute" top={2} left={2} colorScheme="brand">
                             {t('productForm.main')}
                           </Badge>
                         )}
-                        <IconButton
-                          icon={<FaTrash />}
-                          aria-label={t('common.removeImage')}
-                          size="sm"
-                          colorScheme="red"
-                          position="absolute"
-                          top={2}
-                          right={2}
-                          onClick={() => handleRemoveImage(index, false)}
-                        />
+                        
+                        {/* Image Controls */}
+                        <Flex position="absolute" top={2} right={2} gap={1}>
+                          <IconButton
+                            icon={<FaTrash />}
+                            aria-label={t('common.removeImage')}
+                            size="sm"
+                            colorScheme="red"
+                            onClick={() => handleRemoveImage(img.id, false)}
+                          />
+                        </Flex>
+                        
+                        {/* Reorder Controls */}
+                        <Flex position="absolute" bottom={2} right={2} gap={1}>
+                          <IconButton
+                            icon={<FaArrowUp />}
+                            aria-label="Move up"
+                            size="sm"
+                            colorScheme="blue"
+                            variant="solid"
+                            isDisabled={index === 0}
+                            onClick={() => moveImage(img.id, 'up', false)}
+                          />
+                          <IconButton
+                            icon={<FaArrowDown />}
+                            aria-label="Move down"
+                            size="sm"
+                            colorScheme="blue"
+                            variant="solid"
+                            isDisabled={index === images.length - 1}
+                            onClick={() => moveImage(img.id, 'down', false)}
+                          />
+                        </Flex>
+                        
+                        {/* Image Order Badge */}
+                        <Badge position="absolute" bottom={2} left={2} colorScheme="gray">
+                          {existingImages.filter(img => !img.toDelete).length + index + 1}
+                        </Badge>
                       </Box>
                     ))}
                   </SimpleGrid>
