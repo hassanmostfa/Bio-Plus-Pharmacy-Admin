@@ -6,6 +6,8 @@ import {
   Button,
   Flex,
   Input,
+  InputGroup,
+  InputLeftElement,
   Text,
   useColorModeValue,
   Icon,
@@ -23,8 +25,15 @@ import {
   useToast,
   FormControl,
   FormLabel,
+  Menu,
+  MenuButton,
+  MenuList,
+  MenuItem,
+  MenuOptionGroup,
+  MenuItemOption,
 } from '@chakra-ui/react';
 import { FaUpload, FaTrash, FaArrowUp, FaArrowDown } from 'react-icons/fa6';
+import { FaSearch } from 'react-icons/fa';
 import { IoMdArrowBack } from 'react-icons/io';
 import { useNavigate } from 'react-router-dom';
 import { useGetVarientsQuery } from 'api/varientSlice';
@@ -37,6 +46,88 @@ import { useGetTypesQuery } from 'api/typeSlice';
 import { useTranslation } from "react-i18next";
 import i18n from "../../../i18n";
 import { ChevronDownIcon } from '@chakra-ui/icons';
+
+// Custom SearchableSelect Component
+const SearchableSelect = ({ 
+  placeholder, 
+  value, 
+  onChange, 
+  options, 
+  bg, 
+  color, 
+  searchValue, 
+  onSearchChange,
+  getOptionLabel,
+  getOptionValue 
+}) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [localSearch, setLocalSearch] = useState('');
+
+  const handleSearchChange = (e) => {
+    const searchTerm = e.target.value;
+    setLocalSearch(searchTerm);
+    onSearchChange(searchTerm);
+  };
+
+  const handleSelect = (optionValue) => {
+    onChange(optionValue);
+    setIsOpen(false);
+    setLocalSearch('');
+    onSearchChange('');
+  };
+
+  const selectedOption = options.find(option => getOptionValue(option) === value);
+  const displayValue = selectedOption ? getOptionLabel(selectedOption) : '';
+
+  return (
+    <Menu isOpen={isOpen} onClose={() => setIsOpen(false)}>
+      <MenuButton
+        as={Button}
+        rightIcon={<ChevronDownIcon />}
+        w="100%"
+        justifyContent="space-between"
+        bg={bg}
+        color={color}
+        border="1px solid"
+        borderColor="gray.300"
+        _hover={{ borderColor: "gray.400" }}
+        _active={{ borderColor: "blue.500" }}
+        textAlign="left"
+        fontWeight="normal"
+        onClick={() => setIsOpen(true)}
+      >
+        {displayValue || placeholder}
+      </MenuButton>
+      <MenuList maxH="200px" overflowY="auto">
+        <Box p={2}>
+          <InputGroup size="sm">
+            <InputLeftElement pointerEvents="none">
+              <FaSearch color="gray.400" />
+            </InputLeftElement>
+            <Input
+              placeholder="Search..."
+              value={localSearch}
+              onChange={handleSearchChange}
+              onClick={(e) => e.stopPropagation()}
+            />
+          </InputGroup>
+        </Box>
+        {options.length === 0 ? (
+          <MenuItem isDisabled>No options found</MenuItem>
+        ) : (
+          options.map((option) => (
+            <MenuItem
+              key={getOptionValue(option)}
+              onClick={() => handleSelect(getOptionValue(option))}
+            >
+              {getOptionLabel(option)}
+            </MenuItem>
+          ))
+        )}
+      </MenuList>
+    </Menu>
+  );
+};
 
 const AddProduct = () => {
   const [nameEn, setNameEn] = useState('');
@@ -78,21 +169,58 @@ const AddProduct = () => {
   const toast = useToast();
   const navigate = useNavigate();
 
+  // Search terms for server-side search in selects
+  const [categorySearch, setCategorySearch] = useState('');
+  const [brandSearch, setBrandSearch] = useState('');
+  const [typeSearch, setTypeSearch] = useState('');
+  const [categoryDebouncedSearch, setCategoryDebouncedSearch] = useState('');
+  const [brandDebouncedSearch, setBrandDebouncedSearch] = useState('');
+  const [typeDebouncedSearch, setTypeDebouncedSearch] = useState('');
+
+  React.useEffect(() => {
+    const id = setTimeout(() => setCategoryDebouncedSearch(categorySearch), 500);
+    return () => clearTimeout(id);
+  }, [categorySearch]);
+
+  React.useEffect(() => {
+    const id = setTimeout(() => setBrandDebouncedSearch(brandSearch), 500);
+    return () => clearTimeout(id);
+  }, [brandSearch]);
+
+  React.useEffect(() => {
+    const id = setTimeout(() => setTypeDebouncedSearch(typeSearch), 500);
+    return () => clearTimeout(id);
+  }, [typeSearch]);
+
   // Fetch data
   const { data: categoriesResponse } = useGetCategoriesQuery({
     page: 1,
-    limit: 1000,
+    limit: categoryDebouncedSearch ? 20 : 1000,
+    search: categoryDebouncedSearch || undefined,
   });
   const { data: variantsResponse } = useGetVarientsQuery({
     page: 1,
     limit: 1000,
   });
-  const { data: brandsResponse } = useGetBrandsQuery({ page: 1, limit: 1000 });
-  const { data: productTypesResponse } = useGetTypesQuery({ page: 1, limit: 1000 }); // Fetch product types
+  const { data: brandsResponse } = useGetBrandsQuery({ 
+    page: 1, 
+    limit: brandDebouncedSearch ? 20 : 1000, 
+    search: brandDebouncedSearch || undefined,
+    name: brandDebouncedSearch || undefined // Try both search and name parameters
+  });
+  const { data: productTypesResponse } = useGetTypesQuery({ page: 1, limit: typeDebouncedSearch ? 20 : 1000, search: typeDebouncedSearch || undefined }); // Fetch product types
   
   const categories = categoriesResponse?.data?.data || [];
   const variants = variantsResponse?.data || [];
-  const brands = brandsResponse?.data || [];
+  const brands = brandsResponse?.data?.data || brandsResponse?.data || [];
+  
+  // Debug: Log brands response to help identify the issue
+  React.useEffect(() => {
+    if (brandsResponse) {
+      console.log('Brands Response:', brandsResponse);
+      console.log('Brands Data:', brands);
+    }
+  }, [brandsResponse, brands]);
   const productTypes = productTypesResponse?.data?.items || []; // Get product types from response
   
   const textColor = useColorModeValue('secondaryGray.900', 'white');
@@ -133,8 +261,8 @@ const AddProduct = () => {
       setImages(updatedImages);
       
       // Always set the first image (order 1) as main image
-      setMainImageIndex(0);
-    }
+        setMainImageIndex(0);
+      }
   };
 
   const handleRemoveImage = (imageId) => {
@@ -160,7 +288,7 @@ const AddProduct = () => {
       const newImages = [...images];
       const selectedImage = newImages.splice(index, 1)[0];
       newImages.unshift(selectedImage);
-      setImages(newImages);
+    setImages(newImages);
       setMainImageIndex(0);
     }
   };
@@ -241,7 +369,7 @@ const AddProduct = () => {
   // Form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
-  
+
     try {
       // Upload product images first
       const uploadedImages = [];
@@ -249,9 +377,9 @@ const AddProduct = () => {
         const imageUploadPromises = images.map(async (img, index) => {
           const formData = new FormData();
           formData.append('file', img.file);
-  
+
           const uploadResponse = await addFile(formData).unwrap();
-  
+
           if (
             uploadResponse.success &&
             uploadResponse.data.uploadedFiles.length > 0
@@ -264,11 +392,11 @@ const AddProduct = () => {
           }
           return null;
         });
-  
+
         const results = await Promise.all(imageUploadPromises);
         uploadedImages.push(...results.filter((img) => img !== null));
       }
-  
+
       // Prepare translations
       const translations = [];
       if (nameAr || descriptionAr || howToUseAr || treatmentAr || ingredientsAr) {
@@ -328,18 +456,18 @@ const AddProduct = () => {
             }
           }
           
-          return {
-            variantId: attr.variantId,
-            attributeId: attr.attributeId,
+        return {
+          variantId: attr.variantId,
+          attributeId: attr.attributeId,
             cost: parseFloat(attr.cost) || 0,
             price: parseFloat(attr.price) || 0,
             quantity: parseInt(attr.quantity) || 0,
             imageKey: imageKey || attr.imageKey || undefined,
-            isActive: attr.isActive,
+          isActive: attr.isActive,
             expiryDate: attr.expiryDate || undefined,
-          };
-        });
-        
+        };
+      });
+
         variantsData = await Promise.all(variantUploadPromises);
       }
   
@@ -381,10 +509,10 @@ const AddProduct = () => {
           delete productData[key];
         }
       });
-  
+
       // Submit to API
       const response = await addProduct(productData).unwrap();
-  
+
       toast({
         title: t('common.success'),
         description: t('product.productCreatedSuccess'),
@@ -392,7 +520,7 @@ const AddProduct = () => {
         duration: 5000,
         isClosable: true,
       });
-  
+
       navigate('/admin/products');
     } catch (err) {
       toast({
@@ -666,59 +794,52 @@ const AddProduct = () => {
             <Box>
               <FormControl isRequired>
                 <FormLabel>{t('productForm.category')}</FormLabel>
-                <Select
+                <SearchableSelect
                   placeholder={t('productForm.selectCategory')}
                   value={categoryId}
-                  onChange={(e) => setCategoryId(e.target.value)}
+                  onChange={(value) => setCategoryId(value)}
+                  options={categories}
                   bg={inputBg}
                   color={inputTextColor}
-                  style={{ direction: 'ltr' }}
-                >
-                  {categories?.map((cat) => (
-                    <option key={cat.id} value={cat.id}>
-                      {cat.translations?.find((t) => t.languageId === 'en')
-                        ?.name || cat.name}
-                    </option>
-                  ))}
-                </Select>
+                  searchValue={categorySearch}
+                  onSearchChange={setCategorySearch}
+                  getOptionLabel={(cat) => cat.translations?.find((t) => t.languageId === 'en')?.name || cat.name}
+                  getOptionValue={(cat) => cat.id}
+                />
               </FormControl>
             </Box>
             <Box>
               <FormControl isRequired>
                 <FormLabel>{t('productForm.brand')}</FormLabel>
-                <Select
+                <SearchableSelect
                   placeholder={t('productForm.selectBrand')}
                   value={brandId}
-                  onChange={(e) => setBrandId(e.target.value)}
+                  onChange={(value) => setBrandId(value)}
+                  options={brands}
                   bg={inputBg}
                   color={inputTextColor}
-                  style={{ direction: 'ltr' }}
-                >
-                  {brands.map((brand) => (
-                    <option key={brand.id} value={brand.id}>
-                      {brand.name}
-                    </option>
-                  ))}
-                </Select>
+                  searchValue={brandSearch}
+                  onSearchChange={setBrandSearch}
+                  getOptionLabel={(brand) => brand.name}
+                  getOptionValue={(brand) => brand.id}
+                />
               </FormControl>
             </Box>
             <Box>
               <FormControl>
                 <FormLabel>{t('productForm.productType')}</FormLabel>
-                <Select
+                <SearchableSelect
                   placeholder={t('productForm.selectProductType')}
                   value={productTypeId}
-                  onChange={(e) => setProductTypeId(e.target.value)}
+                  onChange={(value) => setProductTypeId(value)}
+                  options={productTypes}
                   bg={inputBg}
                   color={inputTextColor}
-                  style={{ direction: 'ltr' }}
-                >
-                  {productTypes.map((type) => (
-                    <option key={type.id} value={type.id}>
-                      {type.name}
-                    </option>
-                  ))}
-                </Select>
+                  searchValue={typeSearch}
+                  onSearchChange={setTypeSearch}
+                  getOptionLabel={(type) => type.name}
+                  getOptionValue={(type) => type.id}
+                />
               </FormControl>
             </Box>
           </SimpleGrid>
@@ -803,14 +924,14 @@ const AddProduct = () => {
               <Box mt={2}>
                 <FormControl>
                   <FormLabel>{t('productForm.offerPercentage')}</FormLabel>
-                  <Input
-                    type="number"
+                                  <Input
+                  type="number"
                     placeholder={t('productForm.enterOfferPercentage')}
-                    value={offerPercentage}
-                    onChange={(e) => setOfferPercentage(e.target.value)}
-                    bg={inputBg}
-                    color={inputTextColor}
-                  />
+                  value={offerPercentage}
+                  onChange={(e) => setOfferPercentage(e.target.value)}
+                  bg={inputBg}
+                  color={inputTextColor}
+                />
                 </FormControl>
               </Box>
             )}
@@ -859,7 +980,7 @@ const AddProduct = () => {
 
           {/* Status Switches */}
           <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4} mb={4}>
-            <FormControl display="flex" alignItems="center">
+          <FormControl display="flex" alignItems="center">
               <FormLabel mb="0">{t('productForm.isPublished')}</FormLabel>
               <Switch
                 isChecked={isPublished}
@@ -979,12 +1100,12 @@ const AddProduct = () => {
                               onChange={(e) => {
                                 const value = e.target.value;
                                 if (value.length <= 5) {
-                                  handleAttributeChange(
-                                    index,
-                                    'quantity',
+                                handleAttributeChange(
+                                  index,
+                                  'quantity',
                                     value,
                                   );
-                                }
+                              }
                               }}
                               bg={inputBg}
                               color={inputTextColor}
@@ -1084,31 +1205,31 @@ const AddProduct = () => {
               >
                 {images.length > 0 ? (
                   <SimpleGrid columns={{ base: 2, md: 4 }} spacing={4}>
-                    {images.map((img, index) => (
+                {images.map((img, index) => (
                       <Box key={img.id} position="relative" display="flex" flexDirection="column" alignItems="center">
-                        <Image
-                          src={img.preview}
+                    <Image
+                      src={img.preview}
                           alt={t('productForm.productImage', { index: index + 1 })}
-                          borderRadius="md"
+                      borderRadius="md"
                           maxH="150px"
                           border={mainImageIndex === index ? '2px solid' : '1px solid'}
                           borderColor={mainImageIndex === index ? 'brand.500' : 'gray.300'}
-                          cursor="pointer"
+                      cursor="pointer"
                           onClick={() => handleSetMainImage(img.id)}
-                        />
-                        {mainImageIndex === index && (
+                    />
+                    {mainImageIndex === index && (
                           <Badge position="absolute" top={2} left={2} colorScheme="brand">
-                            {t('productForm.main')}
-                          </Badge>
-                        )}
+                        {t('productForm.main')}
+                      </Badge>
+                    )}
                         
                         {/* Image Controls */}
                         <Flex position="absolute" top={2} right={2} gap={1}>
-                          <IconButton
-                            icon={<FaTrash />}
+                    <IconButton
+                      icon={<FaTrash />}
                             aria-label={t('common.removeImage')}
-                            size="sm"
-                            colorScheme="red"
+                      size="sm"
+                      colorScheme="red"
                             onClick={() => handleRemoveImage(img.id)}
                           />
                         </Flex>
@@ -1139,9 +1260,9 @@ const AddProduct = () => {
                         <Badge position="absolute" bottom={2} left={2} colorScheme="gray">
                           {index + 1}
                         </Badge>
-                      </Box>
-                    ))}
-                  </SimpleGrid>
+                  </Box>
+                ))}
+              </SimpleGrid>
                 ) : (
                   <>
                     <Icon as={FaUpload} w={8} h={8} color="#422afb" mb={2} />
@@ -1168,8 +1289,8 @@ const AddProduct = () => {
                       />
                     </Button>
                   </>
-                )}
-              </Box>
+            )}
+          </Box>
             </FormControl>
           </Box>
 

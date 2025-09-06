@@ -23,7 +23,10 @@ export const TypeApi = createApi({
 
   endpoints: (builder) => ({
     getTypes: builder.query({
-      query: () => '/admin/product-types',
+      query: (params) => ({
+        url: '/admin/product-types',
+        params: params, // Allow page, limit, search, etc.
+      }),
     }),
     getType: builder.query({
       query: (id) => `/admin/product-types/${id}`,

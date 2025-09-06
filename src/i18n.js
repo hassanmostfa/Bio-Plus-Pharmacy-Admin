@@ -87,7 +87,7 @@ const resources = {
         fixed: 'Fixed',
       },
       sidebar: {
-        superAdmin: 'Super Admin',
+        superAdmin: 'Pharmacy Admin',
         products: 'Products',
         orders: 'Orders',
         promoCodes: 'Promo Codes',
@@ -562,7 +562,7 @@ const resources = {
         fixed: 'مبلغ ثابت',
       },
       sidebar: {
-        superAdmin: 'مشرف عام',
+        superAdmin: 'مشرف الصيدلية',
         products: 'المنتجات',
         orders: 'الطلبات',
         promoCodes: 'رموز الخصم',

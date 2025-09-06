@@ -6,6 +6,8 @@ import {
   Button,
   Flex,
   Input,
+  InputGroup,
+  InputLeftElement,
   Text,
   useColorModeValue,
   Icon,
@@ -24,8 +26,15 @@ import {
   FormControl,
   FormLabel,
   Spinner,
+  Menu,
+  MenuButton,
+  MenuList,
+  MenuItem,
+  MenuOptionGroup,
+  MenuItemOption,
 } from '@chakra-ui/react';
 import { FaUpload, FaTrash, FaArrowUp, FaArrowDown } from 'react-icons/fa6';
+import { FaSearch } from 'react-icons/fa';
 import { IoMdArrowBack } from 'react-icons/io';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useGetVarientsQuery } from 'api/varientSlice';
@@ -37,6 +46,89 @@ import { useAddFileMutation } from 'api/filesSlice';
 import { useGetTypesQuery } from 'api/typeSlice';
 import { useTranslation } from "react-i18next";
 import i18n from "../../../i18n";
+import { ChevronDownIcon } from '@chakra-ui/icons';
+
+// Custom SearchableSelect Component
+const SearchableSelect = ({ 
+  placeholder, 
+  value, 
+  onChange, 
+  options, 
+  bg, 
+  color, 
+  searchValue, 
+  onSearchChange,
+  getOptionLabel,
+  getOptionValue 
+}) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [localSearch, setLocalSearch] = useState('');
+
+  const handleSearchChange = (e) => {
+    const searchTerm = e.target.value;
+    setLocalSearch(searchTerm);
+    onSearchChange(searchTerm);
+  };
+
+  const handleSelect = (optionValue) => {
+    onChange(optionValue);
+    setIsOpen(false);
+    setLocalSearch('');
+    onSearchChange('');
+  };
+
+  const selectedOption = options.find(option => getOptionValue(option) === value);
+  const displayValue = selectedOption ? getOptionLabel(selectedOption) : '';
+
+  return (
+    <Menu isOpen={isOpen} onClose={() => setIsOpen(false)}>
+      <MenuButton
+        as={Button}
+        rightIcon={<ChevronDownIcon />}
+        w="100%"
+        justifyContent="space-between"
+        bg={bg}
+        color={color}
+        border="1px solid"
+        borderColor="gray.300"
+        _hover={{ borderColor: "gray.400" }}
+        _active={{ borderColor: "blue.500" }}
+        textAlign="left"
+        fontWeight="normal"
+        onClick={() => setIsOpen(true)}
+      >
+        {displayValue || placeholder}
+      </MenuButton>
+      <MenuList maxH="200px" overflowY="auto">
+        <Box p={2}>
+          <InputGroup size="sm">
+            <InputLeftElement pointerEvents="none">
+              <FaSearch color="gray.400" />
+            </InputLeftElement>
+            <Input
+              placeholder="Search..."
+              value={localSearch}
+              onChange={handleSearchChange}
+              onClick={(e) => e.stopPropagation()}
+            />
+          </InputGroup>
+        </Box>
+        {options.length === 0 ? (
+          <MenuItem isDisabled>No options found</MenuItem>
+        ) : (
+          options.map((option) => (
+            <MenuItem
+              key={getOptionValue(option)}
+              onClick={() => handleSelect(getOptionValue(option))}
+            >
+              {getOptionLabel(option)}
+            </MenuItem>
+          ))
+        )}
+      </MenuList>
+    </Menu>
+  );
+};
 
 const EditProduct = () => {
   const { id } = useParams();
@@ -94,25 +186,62 @@ const EditProduct = () => {
     }
   }, [refetch, isProductLoading]); // Dependency array to ensure it only runs on mount
 
+  // Search terms for server-side search in selects
+  const [categorySearch, setCategorySearch] = useState('');
+  const [brandSearch, setBrandSearch] = useState('');
+  const [typeSearch, setTypeSearch] = useState('');
+  const [categoryDebouncedSearch, setCategoryDebouncedSearch] = useState('');
+  const [brandDebouncedSearch, setBrandDebouncedSearch] = useState('');
+  const [typeDebouncedSearch, setTypeDebouncedSearch] = useState('');
+
+  React.useEffect(() => {
+    const id = setTimeout(() => setCategoryDebouncedSearch(categorySearch), 500);
+    return () => clearTimeout(id);
+  }, [categorySearch]);
+
+  React.useEffect(() => {
+    const id = setTimeout(() => setBrandDebouncedSearch(brandSearch), 500);
+    return () => clearTimeout(id);
+  }, [brandSearch]);
+
+  React.useEffect(() => {
+    const id = setTimeout(() => setTypeDebouncedSearch(typeSearch), 500);
+    return () => clearTimeout(id);
+  }, [typeSearch]);
+
   const { data: categoriesResponse } = useGetCategoriesQuery({
     page: 1,
-    limit: 1000,
+    limit: categoryDebouncedSearch ? 20 : 1000,
+    search: categoryDebouncedSearch || undefined,
   });
   const { data: variantsResponse } = useGetVarientsQuery({
     page: 1,
     limit: 1000,
   });
-  const { data: brandsResponse } = useGetBrandsQuery({ page: 1, limit: 1000 });
+  const { data: brandsResponse } = useGetBrandsQuery({ 
+    page: 1, 
+    limit: brandDebouncedSearch ? 20 : 1000, 
+    search: brandDebouncedSearch || undefined,
+    name: brandDebouncedSearch || undefined // Try both search and name parameters
+  });
   const [updateProduct, { isLoading: isUpdating }] = useUpdateProductMutation();
 
-  const { data: productTypesResponse } = useGetTypesQuery({ page: 1, limit: 1000 }); // Fetch product types
+  const { data: productTypesResponse } = useGetTypesQuery({ page: 1, limit: typeDebouncedSearch ? 20 : 1000, search: typeDebouncedSearch || undefined }); // Fetch product types
   const productTypes = productTypesResponse?.data?.items || []; // Get product types from response
 
   // Extract data from responses
   const product = productResponse?.data;
   const categories = categoriesResponse?.data?.data || [];
   const variants = variantsResponse?.data || [];
-  const brands = brandsResponse?.data || [];
+  const brands = brandsResponse?.data?.data || brandsResponse?.data || [];
+  
+  // Debug: Log brands response to help identify the issue
+  React.useEffect(() => {
+    if (brandsResponse) {
+      console.log('Brands Response:', brandsResponse);
+      console.log('Brands Data:', brands);
+    }
+  }, [brandsResponse, brands]);
   const textColor = useColorModeValue('secondaryGray.900', 'white');
   const inputBg = useColorModeValue('gray.100', 'gray.700');
   const inputTextColor = useColorModeValue(undefined, 'white');
@@ -222,7 +351,7 @@ const EditProduct = () => {
       setImages(updatedImages);
 
       // Always set the first image (order 1) as main image
-      setMainImageIndex(0);
+        setMainImageIndex(0);
     }
   };
 
@@ -267,7 +396,7 @@ const EditProduct = () => {
         const newImages = [...images];
         const selectedImage = newImages.splice(index, 1)[0];
         newImages.unshift(selectedImage);
-        setImages(newImages);
+      setImages(newImages);
         setMainImageIndex(0);
       }
     }
@@ -391,10 +520,10 @@ const EditProduct = () => {
       const existingImagesToKeep = existingImages
         .filter((img) => !img.toDelete)
         .map((img, index) => ({
-          imageKey: img.imageKey,
-          order: index,
-          isMain: index === mainImageIndex,
-        }));
+        imageKey: img.imageKey,
+        order: index,
+        isMain: index === mainImageIndex,
+      }));
 
       // Combine existing and new images
       const allImages = [...existingImagesToKeep, ...uploadedImages];
@@ -445,13 +574,13 @@ const EditProduct = () => {
           throw new Error('Price is required for each variant.');
         }
         return {
-          variantId: attr.variantId,
-          attributeId: attr.attributeId,
+        variantId: attr.variantId,
+        attributeId: attr.attributeId,
           cost: attr.cost ? parseFloat(attr.cost) : 0,
           price: parseFloat(attr.price),
           quantity: attr.quantity ? parseInt(attr.quantity) : 0,
-          imageKey: attr.imageKey || undefined,
-          isActive: attr.isActive,
+        imageKey: attr.imageKey || undefined,
+        isActive: attr.isActive,
           lotNumber: attr.lotNumber || undefined,
           expiryDate: attr.expiryDate || undefined,
         };
@@ -553,7 +682,7 @@ const EditProduct = () => {
     );
   }
 
-  return (
+    return (
     <Box bg={inputBg} className="container add-admin-container w-100" dir={isRTL ? 'rtl' : 'ltr'}>
       <Box bg={inputBg} className="add-admin-card shadow p-4 w-100">
         <Flex className="mb-3 d-flex justify-content-between align-items-center">
@@ -795,59 +924,52 @@ const EditProduct = () => {
             <Box>
               <FormControl isRequired>
                 <FormLabel>{t('productForm.category')}</FormLabel>
-                <Select
+                <SearchableSelect
                   placeholder={t('productForm.selectCategory')}
                   value={categoryId}
-                  onChange={(e) => setCategoryId(e.target.value)}
+                  onChange={(value) => setCategoryId(value)}
+                  options={categories}
                   bg={inputBg}
                   color={inputTextColor}
-                  style={{ direction: 'ltr' }}
-                >
-                  {categories?.map((cat) => (
-                    <option key={cat.id} value={cat.id}>
-                      {cat.translations?.find((t) => t.languageId === 'en')
-                        ?.name || cat.name}
-                    </option>
-                  ))}
-                </Select>
+                  searchValue={categorySearch}
+                  onSearchChange={setCategorySearch}
+                  getOptionLabel={(cat) => cat.translations?.find((t) => t.languageId === 'en')?.name || cat.name}
+                  getOptionValue={(cat) => cat.id}
+                />
               </FormControl>
             </Box>
             <Box>
               <FormControl isRequired>
                 <FormLabel>{t('productForm.brand')}</FormLabel>
-                <Select
+                <SearchableSelect
                   placeholder={t('productForm.selectBrand')}
                   value={brandId}
-                  onChange={(e) => setBrandId(e.target.value)}
+                  onChange={(value) => setBrandId(value)}
+                  options={brands}
                   bg={inputBg}
                   color={inputTextColor}
-                  style={{ direction: 'ltr' }}
-                >
-                  {brands.map((brand) => (
-                    <option key={brand.id} value={brand.id}>
-                      {brand.name}
-                    </option>
-                  ))}
-                </Select>
+                  searchValue={brandSearch}
+                  onSearchChange={setBrandSearch}
+                  getOptionLabel={(brand) => brand.name}
+                  getOptionValue={(brand) => brand.id}
+                />
               </FormControl>
             </Box>
             <Box>
               <FormControl>
                 <FormLabel>{t('productForm.productType')}</FormLabel>
-                <Select
+                <SearchableSelect
                   placeholder={t('productForm.selectProductType')}
                   value={productTypeId}
-                  onChange={(e) => setProductTypeId(e.target.value)}
+                  onChange={(value) => setProductTypeId(value)}
+                  options={productTypes}
                   bg={inputBg}
                   color={inputTextColor}
-                  style={{ direction: 'ltr' }}
-                >
-                  {productTypes.map((type) => (
-                    <option key={type.id} value={type.id}>
-                      {type.name}
-                    </option>
-                  ))}
-                </Select>
+                  searchValue={typeSearch}
+                  onSearchChange={setTypeSearch}
+                  getOptionLabel={(type) => type.name}
+                  getOptionValue={(type) => type.id}
+                />
               </FormControl>
             </Box>
           </SimpleGrid>
@@ -988,29 +1110,29 @@ const EditProduct = () => {
           <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4} mb={4}>
             <FormControl display="flex" alignItems="center">
               <FormLabel mb="0">{t('productForm.isPublished')}</FormLabel>
-              <Switch
+                <Switch
                 isChecked={isPublished}
                 onChange={() => setIsPublished(!isPublished)}
                 style={{ direction: 'ltr' }}
-              />
+                />
             </FormControl>
 
             <FormControl display="flex" alignItems="center">
               <FormLabel mb="0">{t('productForm.isActive')}</FormLabel>
-              <Switch
-                isChecked={isActive}
-                onChange={() => setIsActive(!isActive)}
+                <Switch
+                  isChecked={isActive}
+                  onChange={() => setIsActive(!isActive)}
                 style={{ direction: 'ltr' }}
-              />
+                />
             </FormControl>
             
             <FormControl display="flex" alignItems="center">
               <FormLabel mb="0">{t('productForm.hasVariants')}</FormLabel>
-              <Switch
+                <Switch
                 isChecked={hasVariants}
                 onChange={() => setHasVariants(!hasVariants)}
                 style={{ direction: 'ltr' }}
-              />
+                />
             </FormControl>
           </SimpleGrid>
 
@@ -1019,19 +1141,19 @@ const EditProduct = () => {
             <Box mb={4}>
               <FormControl mb={4}>
                 <FormLabel>{t('productForm.selectVariant')}</FormLabel>
-                <Select
+                  <Select
                   placeholder={t('productForm.selectVariant')}
-                  onChange={handleVariantSelect}
-                  bg={inputBg}
-                  color={inputTextColor}
+                    onChange={handleVariantSelect}
+                    bg={inputBg}
+                    color={inputTextColor}
                   style={{ direction: 'ltr' }}
-                >
-                  {variants.map((variant) => (
-                    <option key={variant.id} value={variant.id}>
-                      {variant.name}
-                    </option>
-                  ))}
-                </Select>
+                  >
+                    {variants.map((variant) => (
+                      <option key={variant.id} value={variant.id}>
+                        {variant.name}
+                      </option>
+                    ))}
+                  </Select>
               </FormControl>
 
               {selectedAttributes.length > 0 && (
@@ -1106,12 +1228,12 @@ const EditProduct = () => {
                               onChange={(e) => {
                                 const value = e.target.value;
                                 if (value.length <= 5) {
-                                  handleAttributeChange(
-                                    index,
-                                    'quantity',
+                                handleAttributeChange(
+                                  index,
+                                  'quantity',
                                     value,
                                   );
-                                }
+                              }
                               }}
                               bg={inputBg}
                               color={inputTextColor}
@@ -1143,18 +1265,18 @@ const EditProduct = () => {
                                     });
                                     return;
                                   }
-                                  handleAttributeChange(
-                                    index,
-                                    'image',
-                                    e.target.files[0],
+                                handleAttributeChange(
+                                  index,
+                                  'image',
+                                  e.target.files[0],
                                   );
-                                }
+                              }
                               }}
                               bg={inputBg}
                               color={inputTextColor}
                             />
                             {(attr.image || attr.imageKey) && (
-                              <Image
+                                <Image
                                 src={attr.image instanceof File ? URL.createObjectURL(attr.image) : (attr.imageKey || attr.image)}
                                 alt={t('productForm.variantPreview')}
                                 mt={2}
@@ -1214,29 +1336,29 @@ const EditProduct = () => {
                     {/* Existing Images */}
                     {existingImages.filter(img => !img.toDelete).map((img, index) => (
                       <Box key={img.id} position="relative" display="flex" flexDirection="column" alignItems="center">
-                        <Image
-                          src={img.imageKey}
+                    <Image
+                      src={img.imageKey}
                           alt={t('productForm.productImage', { index: index + 1 })}
-                          borderRadius="md"
+                      borderRadius="md"
                           maxH="150px"
                           border={mainImageIndex === index ? '2px solid' : '1px solid'}
                           borderColor={mainImageIndex === index ? 'brand.500' : 'gray.300'}
-                          cursor="pointer"
+                      cursor="pointer"
                           onClick={() => handleSetMainImage(img.id, true)}
                         />
                         {mainImageIndex === index && (
                           <Badge position="absolute" top={2} left={2} colorScheme="brand">
-                            {t('productForm.main')}
-                          </Badge>
-                        )}
+                        {t('productForm.main')}
+                      </Badge>
+                    )}
                         
                         {/* Image Controls */}
                         <Flex position="absolute" top={2} right={2} gap={1}>
-                          <IconButton
-                            icon={<FaTrash />}
+                    <IconButton
+                      icon={<FaTrash />}
                             aria-label={t('common.removeImage')}
-                            size="sm"
-                            colorScheme="red"
+                      size="sm"
+                      colorScheme="red"
                             onClick={() => handleRemoveImage(img.id, true)}
                           />
                         </Flex>
@@ -1267,34 +1389,34 @@ const EditProduct = () => {
                         <Badge position="absolute" bottom={2} left={2} colorScheme="gray">
                           {index + 1}
                         </Badge>
-                      </Box>
-                    ))}
+                  </Box>
+                ))}
                     {/* New Images */}
                     {images.map((img, index) => (
                       <Box key={img.id} position="relative" display="flex" flexDirection="column" alignItems="center">
-                        <Image
-                          src={img.preview}
+                      <Image
+                        src={img.preview}
                           alt={t('productForm.productImage', { index: existingImages.filter(img => !img.toDelete).length + index + 1 })}
-                          borderRadius="md"
+                        borderRadius="md"
                           maxH="150px"
                           border={mainImageIndex === existingImages.filter(img => !img.toDelete).length + index ? '2px solid' : '1px solid'}
                           borderColor={mainImageIndex === existingImages.filter(img => !img.toDelete).length + index ? 'brand.500' : 'gray.300'}
-                          cursor="pointer"
+                        cursor="pointer"
                           onClick={() => handleSetMainImage(img.id, false)}
                         />
                         {mainImageIndex === existingImages.filter(img => !img.toDelete).length + index && (
                           <Badge position="absolute" top={2} left={2} colorScheme="brand">
-                            {t('productForm.main')}
-                          </Badge>
-                        )}
+                          {t('productForm.main')}
+                        </Badge>
+                      )}
                         
                         {/* Image Controls */}
                         <Flex position="absolute" top={2} right={2} gap={1}>
-                          <IconButton
-                            icon={<FaTrash />}
+                      <IconButton
+                        icon={<FaTrash />}
                             aria-label={t('common.removeImage')}
-                            size="sm"
-                            colorScheme="red"
+                        size="sm"
+                        colorScheme="red"
                             onClick={() => handleRemoveImage(img.id, false)}
                           />
                         </Flex>
@@ -1325,9 +1447,9 @@ const EditProduct = () => {
                         <Badge position="absolute" bottom={2} left={2} colorScheme="gray">
                           {existingImages.filter(img => !img.toDelete).length + index + 1}
                         </Badge>
-                      </Box>
+                    </Box>
                     ))}
-                  </SimpleGrid>
+              </SimpleGrid>
                 ) : (
                   <>
                     <Icon as={FaUpload} w={8} h={8} color="#422afb" mb={2} />

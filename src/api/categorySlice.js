@@ -23,9 +23,9 @@ export const CategoryApi = createApi({
 
   endpoints: (builder) => ({
     getCategories: builder.query({
-      query: ({ page, limit }) => ({
+      query: (params) => ({
         url: '/admin/categories',
-        params: { page, limit }, // Pass page and limit as query parameters
+        params: params, // Allow page, limit, search, etc.
       }),
     }),
     addCategory: builder.mutation({
