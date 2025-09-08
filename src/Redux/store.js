@@ -31,7 +31,26 @@ export const store = configureStore({
     [prescriptionApi.reducerPath]: prescriptionApi.reducer
   },
   middleware: (getDefaultMiddleware) =>
-    getDefaultMiddleware().concat(
+    getDefaultMiddleware({
+      serializableCheck: {
+        ignoredActions: [
+          /^ProductApi\/queries\/.*/,
+          /^pharmacyApi\/queries\/.*/,
+          /^filesApi\/queries\/.*/,
+          /^__rtkq\/.*/
+        ],
+        ignoredPaths: [
+          /^ProductApi\.queries\./,
+          /^pharmacyApi\.queries\./,
+          /^filesApi\.queries\./,
+          /^.*\.queries\./
+        ],
+        ignoredActionsPaths: [
+          'meta.arg',
+          'payload.timestamp'
+        ]
+      }
+    }).concat(
       PromocodeApi.middleware,
       apiService.middleware,
       roleApi.middleware,

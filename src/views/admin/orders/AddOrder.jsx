@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Box,
   Button,
@@ -26,6 +26,10 @@ import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useContext } from 'react';
 import { LanguageContext } from '../../../components/auth/LanguageContext';
+import { useCreateOrderMutation } from 'api/orderSlice';
+import { useGetProductsQuery } from 'api/productSlice';
+import { useGetUsersQuery } from 'api/userSlice';
+import { useGetPromocodesQuery } from 'api/promocodeSlice';
 
 const AddOrder = () => {
   const [userId, setUserId] = useState('');
@@ -38,39 +42,56 @@ const AddOrder = () => {
   const [selectedPromoCode, setSelectedPromoCode] = useState(null);
   const [promocodeSearchTerm, setPromocodeSearchTerm] = useState('');
   const [calculatedTotal, setCalculatedTotal] = useState(0);
+  const [address, setAddress] = useState('');
 
-  // Static mock data
-  const users = [
-    { id: '1', name: 'John Doe' },
-    { id: '2', name: 'Jane Smith' },
-    { id: '3', name: 'Mike Johnson' },
-    { id: '4', name: 'Sarah Wilson' },
-    { id: '5', name: 'David Brown' },
-  ];
 
-  const products = [
-    { id: '1', name: 'Product A', price: 25.99 },
-    { id: '2', name: 'Product B', price: 15.50 },
-    { id: '3', name: 'Product C', price: 45.00 },
-    { id: '4', name: 'Product D', price: 30.25 },
-    { id: '5', name: 'Product E', price: 12.75 },
-  ];
 
-  const promocodes = [
-    { id: '1', code: 'SAVE10', value: 10, type: 'PERCENTAGE' },
-    { id: '2', code: 'SAVE20', value: 20, type: 'PERCENTAGE' },
-    { id: '3', code: 'FIXED5', value: 5, type: 'FIXED' },
-    { id: '4', code: 'FIXED10', value: 10, type: 'FIXED' },
-  ];
 
   const navigate = useNavigate();
   const toast = useToast();
   const { t } = useTranslation();
   const { language } = useContext(LanguageContext);
 
+  // API hooks
+  const [createOrder, { isLoading: isCreatingOrder }] = useCreateOrderMutation();
+  const { data: productsResponse, isLoading: isProductsLoading } = useGetProductsQuery({
+    page: 1,
+    limit: 1000,
+    pharmacyId: JSON.parse(localStorage.getItem('pharmacy'))?.id
+  });
+  const { data: usersResponse, isLoading: isUsersLoading } = useGetUsersQuery({
+    page: 1,
+    limit: 1000
+  });
+  const { data: promoCodesResponse, isLoading: isPromoCodesLoading } = useGetPromocodesQuery({
+    page: 1,
+    limit: 1000
+  });
+
   const cardBg = useColorModeValue('white', 'navy.700');
   const inputBg = useColorModeValue('gray.100', 'gray.700');
   const textColor = useColorModeValue('secondaryGray.900', 'white');
+
+  // Get products, users, and promocodes from API response
+  const products = productsResponse?.data || [];
+  const users = usersResponse?.data || [];
+  const promoCodes = promoCodesResponse?.data || [];
+  
+  // Debug: Log API data
+  useEffect(() => {
+    if (productsResponse) {
+      console.log('Products Response:', productsResponse);
+      console.log('Products Array:', products);
+    }
+    if (usersResponse) {
+      console.log('Users Response:', usersResponse);
+      console.log('Users Array:', users);
+    }
+    if (promoCodesResponse) {
+      console.log('PromoCodes Response:', promoCodesResponse);
+      console.log('PromoCodes Array:', promoCodes);
+    }
+  }, [productsResponse, products, usersResponse, users, promoCodesResponse, promoCodes]);
 
   const handleCancel = () => {
     setUserId('');
@@ -83,10 +104,11 @@ const AddOrder = () => {
     setSelectedPromoCode(null);
     setPromocodeSearchTerm('');
     setCalculatedTotal(0);
+    setAddress('');
   };
 
   const handleSubmit = async () => {
-    if (!userId || !paymentMethod || !orderDate || orderItems.some(item => !item.productId || item.quantity === '' || parseInt(item.quantity) <= 0)) {
+    if (!userId || !paymentMethod || !orderDate || !address || orderItems.some(item => !item.productId || item.quantity === '' || parseInt(item.quantity) <= 0)) {
       toast({
         title: t('addOrder.error'),
         description: t('addOrder.fillAllFields'),
@@ -97,7 +119,44 @@ const AddOrder = () => {
       return;
     }
 
-    // Mock success response
+    try {
+      // Prepare order data according to the API structure
+      const orderData = {
+        userId: userId,
+        pharmacyId: JSON.parse(localStorage.getItem('pharmacy'))?.id,
+        paymentMethod: paymentMethod,
+        address: address,
+        items: orderItems.map(item => {
+          const itemData = {
+            productId: item.productId,
+            quantity: parseInt(item.quantity)
+          };
+          
+          // Only add discount if it's provided and greater than 0
+          if (item.discount && parseFloat(item.discount) > 0) {
+            itemData.discount = parseFloat(item.discount);
+          }
+          
+          // Add variantItemId if needed (you can add this field to the form later)
+          // if (item.variantItemId) {
+          //   itemData.variantItemId = item.variantItemId;
+          // }
+          
+          return itemData;
+        }),
+        orderDate: orderDate
+      };
+
+      // Add promoCodeId if selected
+      if (promoCodeId) {
+        orderData.promoCodeId = promoCodeId;
+      }
+
+      console.log('Sending order data:', orderData);
+
+      // Call the API
+      const response = await createOrder(orderData).unwrap();
+
     toast({
       title: t('addOrder.success'),
       description: t('addOrder.orderAddedSuccessfully'),
@@ -105,7 +164,18 @@ const AddOrder = () => {
       duration: 5000,
       isClosable: true,
     });
+      
     navigate('/admin/orders');
+    } catch (error) {
+      console.error('Error creating order:', error);
+      toast({
+        title: t('addOrder.error'),
+        description: error.data?.message || error.message || t('addOrder.orderCreationFailed'),
+        status: 'error',
+        duration: 5000,
+        isClosable: true,
+      });
+    }
   };
 
   const handleAddItem = () => {
@@ -188,7 +258,10 @@ const AddOrder = () => {
           {/* Customer */}
           <div className="mb-3">
             <FormControl isRequired>
-              <FormLabel color={textColor} fontSize="sm" fontWeight="700">{t('addOrder.customer')}</FormLabel>
+              <FormLabel color={textColor} fontSize="sm" fontWeight="700">
+                {t('addOrder.customer')}
+                {isUsersLoading && <Text as="span" fontSize="sm" color="gray.500" ml={2}>({t('addOrder.loadingUsers')})</Text>}
+              </FormLabel>
               <Menu>
                 <MenuButton
                   as={Button}
@@ -235,7 +308,22 @@ const AddOrder = () => {
             </FormControl>
           </div>
 
-          
+          {/* Address */}
+          <div className="mb-3">
+            <FormControl isRequired>
+              <FormLabel color={textColor} fontSize="sm" fontWeight="700">{t('addOrder.address')}</FormLabel>
+              <Input
+                type="text"
+                value={address}
+                onChange={(e) => setAddress(e.target.value)}
+                required
+                mt="8px"
+                bg={inputBg}
+                name="address"
+                placeholder={t('addOrder.enterAddress')}
+              />
+            </FormControl>
+          </div>
 
           {/* Payment */}
           <div className="mb-3">
@@ -268,7 +356,10 @@ const AddOrder = () => {
           {/* Promo Code */}
           <div className="mb-3">
             <FormControl>
-              <FormLabel color={textColor} fontSize="sm" fontWeight="700">{t('addOrder.promoCode')}</FormLabel>
+              <FormLabel color={textColor} fontSize="sm" fontWeight="700">
+                {t('addOrder.promoCode')}
+                {isPromoCodesLoading && <Text as="span" fontSize="sm" color="gray.500" ml={2}>({t('addOrder.loadingPromoCodes')})</Text>}
+              </FormLabel>
               <Menu>
                 <MenuButton
                   as={Button}
@@ -295,7 +386,7 @@ const AddOrder = () => {
                       size="sm"
                     />
                   </Box>
-                  {promocodes
+                  {promoCodes
                     .filter(promo =>
                       promo.code && promo.code.toLowerCase().includes(promocodeSearchTerm.toLowerCase())
                     )
@@ -310,6 +401,11 @@ const AddOrder = () => {
                         {promo.code} - {promo.value}{promo.type === 'PERCENTAGE' ? '%' : ''}
                       </MenuItem>
                     ))}
+                  {promoCodes.length === 0 && !isPromoCodesLoading && (
+                    <MenuItem isDisabled>
+                      {t('addOrder.noPromoCodesFound')}
+                    </MenuItem>
+                  )}
                 </MenuList>
               </Menu>
             </FormControl>
@@ -331,7 +427,10 @@ const AddOrder = () => {
 
           {/* Order Items Table */}
           <Box mb={4}>
-            <Text color={textColor} fontSize="md" fontWeight="700" mb={2}>{t('addOrder.orderItems')} <span className="text-danger mx-1">*</span></Text>
+            <Text color={textColor} fontSize="md" fontWeight="700" mb={2}>
+              {t('addOrder.orderItems')} <span className="text-danger mx-1">*</span>
+              {isProductsLoading && <Text as="span" fontSize="sm" color="gray.500" ml={2}>({t('addOrder.loadingProducts')})</Text>}
+            </Text>
             <Table variant="simple">
               <Thead>
                 <Tr>
@@ -373,9 +472,11 @@ const AddOrder = () => {
                               />
                             </Box>
                             {products
-                              .filter(product =>
-                                product.name && product.name.toLowerCase().includes(item.searchTerm.toLowerCase())
-                              )
+                              .filter(product => {
+                                const matches = product.name && product.name.toLowerCase().includes(item.searchTerm.toLowerCase());
+                                console.log('Product filter:', { productName: product.name, searchTerm: item.searchTerm, matches });
+                                return matches;
+                              })
                               .map(product => (
                                 <MenuItem
                                   key={product.id}
@@ -450,6 +551,9 @@ const AddOrder = () => {
             <Button
               type="submit"
               variant={"darkBrand"}
+              isLoading={isCreatingOrder}
+              loadingText={t('addOrder.creating')}
+              isDisabled={isCreatingOrder}
             >
               {t('addOrder.createOrder')}
             </Button>

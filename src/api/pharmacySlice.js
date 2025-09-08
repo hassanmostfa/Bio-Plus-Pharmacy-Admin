@@ -60,6 +60,12 @@ export const pharmacyApi = createApi({
     getStats: builder.query({
       query: () => '/admin/stats/pharmacy',
     }),
+    getHighestSellingProducts: builder.query({
+      query: (pharmacyId) => `/admin/pharmacy-analytics/highest-selling-products/${pharmacyId}`,
+    }),
+    getLowStockProducts: builder.query({
+      query: (pharmacyId) => `/admin/pharmacy-analytics/low-stock-products/${pharmacyId}`,
+    }),
   }),
 });
 
@@ -71,4 +77,6 @@ export const {
   useUpdatePharmacyMutation,
   useDeletePharmacyMutation,
   useGetStatsQuery,
+  useGetHighestSellingProductsQuery,
+  useGetLowStockProductsQuery,
 } = pharmacyApi;

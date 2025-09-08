@@ -109,6 +109,9 @@ const SearchableSelect = ({
               value={localSearch}
               onChange={handleSearchChange}
               onClick={(e) => e.stopPropagation()}
+              name="search-input"
+              formNoValidate
+              autoComplete="off"
             />
           </InputGroup>
         </Box>
@@ -369,6 +372,16 @@ const AddProduct = () => {
   // Form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
+    console.log('Form submit triggered');
+    console.log('Form data:', {
+      nameEn,
+      descriptionEn,
+      categoryId,
+      brandId,
+      price,
+      cost,
+      quantity
+    });
 
     try {
       // Upload product images first
@@ -573,7 +586,7 @@ const AddProduct = () => {
             {t('productForm.back')}
           </Button>
         </Flex>
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={handleSubmit} noValidate>
           {/* Basic Information */}
           <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4} mb={4}>
             <Box>
@@ -1310,6 +1323,7 @@ const AddProduct = () => {
               isLoading={isLoading}
               isDisabled={isLoading}
               loadingText={t('common.saving')}
+              onClick={() => console.log('Submit button clicked')}
             >
               {t('common.save')}
             </Button>
