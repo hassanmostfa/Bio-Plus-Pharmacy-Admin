@@ -22,6 +22,13 @@ import {
   InputGroup,
   InputLeftElement,
   IconButton,
+  Grid,
+  GridItem,
+  Stat,
+  StatLabel,
+  StatNumber,
+  StatHelpText,
+  Badge,
 } from '@chakra-ui/react';
 import {
   createColumnHelper,
@@ -42,6 +49,7 @@ import * as XLSX from 'xlsx';
 import { useTranslation } from "react-i18next";
 import { useContext } from 'react';
 import { LanguageContext } from '../../../components/auth/LanguageContext';
+import { useGetPharmacyReportQuery } from 'api/pharmacySlice'; // Update this path
 
 const columnHelper = createColumnHelper();
 
@@ -56,130 +64,141 @@ const Reports = () => {
   const [sorting, setSorting] = React.useState([]);
   const toast = useToast();
 
+  // Get pharmacy ID from localStorage
+  const getPharmacyId = () => {
+    try {
+      const pharmacyData = localStorage.getItem('pharmacy');
+      if (pharmacyData) {
+        const pharmacy = JSON.parse(pharmacyData);
+        return pharmacy.id;
+      }
+    } catch (error) {
+      console.error('Error parsing pharmacy data from localStorage:', error);
+    }
+    return null;
+  };
+
+  const pharmacyId = getPharmacyId();
+
+  // Use the pharmacy report API
+  const { data: reportData, error, isLoading, refetch } = useGetPharmacyReportQuery(pharmacyId, {
+    skip: !pharmacyId, // Skip the query if pharmacyId is not available
+  });
+
   // Pagination state for Inventory tab
   const [inventoryPage, setInventoryPage] = React.useState(1);
-  const [inventoryLimit, setInventoryLimit] = React.useState(10);
+  const [inventoryLimit] = React.useState(10);
 
   // Pagination state for Orders tab
   const [ordersPage, setOrdersPage] = React.useState(1);
-  const [ordersLimit, setOrdersLimit] = React.useState(10);
+  const [ordersLimit] = React.useState(10);
 
   const textColor = useColorModeValue('secondaryGray.900', 'white');
   const borderColor = useColorModeValue('gray.200', 'whiteAlpha.100');
 
-  // Static mock data
-  const inventoryData = {
-    data: {
-      products: [
-        { name: 'Product A', category: 'Medicines', sku: 'SKU001', quantity: 150, stockStatus: 'In Stock', createdAt: '2024-01-15' },
-        { name: 'Product B', category: 'Supplements', sku: 'SKU002', quantity: 25, stockStatus: 'Low Stock', createdAt: '2024-01-20' },
-        { name: 'Product C', category: 'Devices', sku: 'SKU003', quantity: 0, stockStatus: 'Out of Stock', createdAt: '2024-01-25' },
-        { name: 'Product D', category: 'Medicines', sku: 'SKU004', quantity: 200, stockStatus: 'In Stock', createdAt: '2024-02-01' },
-        { name: 'Product E', category: 'Supplements', sku: 'SKU005', quantity: 30, stockStatus: 'Low Stock', createdAt: '2024-02-05' },
-      ],
-      pagination: {
-        totalPages: 3,
-        currentPage: 1,
-        totalItems: 25
+  // Process data from API
+  const inventoryStats = reportData?.data?.inventoryStats || {};
+  const orderStats = reportData?.data?.orderStats || {};
+  const recentOrders = reportData?.data?.recentOrders || [];
+  const lowStockProducts = inventoryStats?.lowStockProducts || [];
+  const highStockProducts = inventoryStats?.highStockProducts || [];
+
+  // Get pharmacy name from localStorage
+  const getPharmacyName = () => {
+    try {
+      const pharmacyData = localStorage.getItem('pharmacy');
+      if (pharmacyData) {
+        const pharmacy = JSON.parse(pharmacyData);
+        return pharmacy.name;
       }
+    } catch (error) {
+      console.error('Error parsing pharmacy data from localStorage:', error);
     }
+    return 'Pharmacy';
   };
 
-  const ordersData = {
-    data: {
-      orders: [
-        { orderNumber: 'ORD001', customerName: 'John Doe', total: 150.00, status: 'Completed', createdAt: '2024-01-15' },
-        { orderNumber: 'ORD002', customerName: 'Jane Smith', total: 89.50, status: 'Pending', createdAt: '2024-01-20' },
-        { orderNumber: 'ORD003', customerName: 'Mike Johnson', total: 245.75, status: 'Processing', createdAt: '2024-01-25' },
-        { orderNumber: 'ORD004', customerName: 'Sarah Wilson', total: 67.25, status: 'Completed', createdAt: '2024-02-01' },
-        { orderNumber: 'ORD005', customerName: 'David Brown', total: 189.99, status: 'Cancelled', createdAt: '2024-02-05' },
-      ],
-      pagination: {
-        totalPages: 2,
-        currentPage: 1,
-        totalItems: 20
-      }
-    }
-  };
+  const pharmacyName = getPharmacyName();
 
   // Debounce search query
   React.useEffect(() => {
     const timer = setTimeout(() => {
       setDebouncedSearchQuery(searchQuery);
-             // Reset to first page when searching
-       setInventoryPage(1);
-       setOrdersPage(1);
+      // Reset to first page when searching
+      setInventoryPage(1);
+      setOrdersPage(1);
     }, 500);
 
     return () => clearTimeout(timer);
   }, [searchQuery]);
 
-  // Update table data when tab changes
+  // Update table data when tab changes or API data loads
   React.useEffect(() => {
     let newData = [];
-         switch(activeTab) {
-       case 0:
-         newData = inventoryData?.data?.products || [];
-         break;
-       case 1:
-         newData = ordersData?.data?.orders || [];
-         break;
-       default:
-         break;
-     }
+    switch(activeTab) {
+      case 0: // Inventory Tab - Low Stock Products
+        newData = lowStockProducts;
+        break;
+      case 1: // Orders Tab - Recent Orders
+        newData = recentOrders;
+        break;
+      default:
+        break;
+    }
     
     // Filter data based on search query
     if (debouncedSearchQuery) {
       newData = newData.filter(item => 
         Object.values(item).some(value => 
-          value.toString().toLowerCase().includes(debouncedSearchQuery.toLowerCase())
+          value && value.toString().toLowerCase().includes(debouncedSearchQuery.toLowerCase())
         )
       );
     }
     
     setTableData(newData);
-  }, [activeTab, debouncedSearchQuery]);
+  }, [activeTab, debouncedSearchQuery, lowStockProducts, recentOrders]);
 
   const handleDownload = () => {
     const workbook = XLSX.utils.book_new();
-    let fileName = 'report_data.xlsx';
+    let fileName = 'pharmacy_report.xlsx';
     let sheetData = [];
     let sheetName = '';
 
-         switch (activeTab) {
-       case 0: // Inventory Tab
-         sheetData = inventoryData?.data?.products?.map(item => ({
-           'Product Name': item.name,
-           'Category': item.category,
-           'SKU': item.sku,
-           'Quantity': item.quantity,
-           'Stock Status': item.stockStatus,
-           'Created At': item.createdAt,
-         })) || [];
-         sheetName = 'Inventory Report';
-         fileName = 'inventory_report.xlsx';
-         break;
-       case 1: // Orders Tab
-         sheetData = ordersData?.data?.orders?.map(item => ({
-           'Order Number': item.orderNumber,
-           'Customer Name': item.customerName,
-           'Total': item.total,
-           'Status': item.status,
-           'Created At': item.createdAt,
-         })) || [];
-         sheetName = 'Orders Report';
-         fileName = 'orders_report.xlsx';
-         break;
-       default:
-         toast({
-           title: 'Export Error',
-           description: 'Could not determine report type',
-           status: 'error',
-           duration: 3000,
-           isClosable: true,
-         });
-         return;
-     }
+    switch (activeTab) {
+      case 0: // Inventory Tab
+        sheetData = lowStockProducts.map(item => ({
+          'Product Name': item.name,
+          'SKU': item.sku,
+          'Price': item.price,
+          'Quantity': item.quantity,
+          'Category': item.categoryName,
+        }));
+        sheetName = 'Low Stock Products';
+        fileName = 'low_stock_products.xlsx';
+        break;
+      case 1: // Orders Tab
+        sheetData = recentOrders.map(item => ({
+          'Order Number': item.orderNumber,
+          'Customer Name': item.customer?.name || 'N/A',
+          'Phone Number': item.customer?.phoneNumber || 'N/A',
+          'Total': item.total,
+          'Status': item.status,
+          'Payment Status': item.paymentStatus,
+          'Created At': item.createdAt,
+          'Item Count': item.itemCount,
+        }));
+        sheetName = 'Recent Orders';
+        fileName = 'recent_orders.xlsx';
+        break;
+      default:
+        toast({
+          title: 'Export Error',
+          description: 'Could not determine report type',
+          status: 'error',
+          duration: 3000,
+          isClosable: true,
+        });
+        return;
+    }
 
     if (sheetData.length === 0) {
       toast({
@@ -215,12 +234,12 @@ const Reports = () => {
         </Text>
       ),
       cell: (info) => (
-        <Text color={textColor} fontSize="sm">
+        <Text color={textColor} fontSize="sm" fontWeight="500">
           {info.getValue()}
         </Text>
       ),
     }),
-    columnHelper.accessor('category', {
+    columnHelper.accessor('categoryName', {
       id: 'category',
       header: () => (
         <Text fontSize={{ sm: '10px', lg: '12px' }} color="gray.400">
@@ -246,6 +265,19 @@ const Reports = () => {
         </Text>
       ),
     }),
+    columnHelper.accessor('price', {
+      id: 'price',
+      header: () => (
+        <Text fontSize={{ sm: '10px', lg: '12px' }} color="gray.400">
+          Price
+        </Text>
+      ),
+      cell: (info) => (
+        <Text color={textColor} fontSize="sm">
+          ${info.getValue()}
+        </Text>
+      ),
+    }),
     columnHelper.accessor('quantity', {
       id: 'quantity',
       header: () => (
@@ -254,23 +286,11 @@ const Reports = () => {
         </Text>
       ),
       cell: (info) => (
-        <Text color={textColor} fontSize="sm">
-          {info.getValue()}
-        </Text>
-      ),
-    }),
-    columnHelper.accessor('stockStatus', {
-      id: 'stockStatus',
-      header: () => (
-        <Text fontSize={{ sm: '10px', lg: '12px' }} color="gray.400">
-          Status
-        </Text>
-      ),
-      cell: (info) => (
         <Text 
-          color={info.getValue() === 'In Stock' ? 'green.500' : 
-                info.getValue() === 'Low Stock' ? 'orange.500' : 'red.500'} 
+          color={info.getValue() > 10 ? 'green.500' : 
+                info.getValue() > 5 ? 'orange.500' : 'red.500'} 
           fontSize="sm"
+          fontWeight="600"
         >
           {info.getValue()}
         </Text>
@@ -287,12 +307,12 @@ const Reports = () => {
         </Text>
       ),
       cell: (info) => (
-        <Text color={textColor} fontSize="sm">
+        <Text color={textColor} fontSize="sm" fontWeight="500">
           {info.getValue()}
         </Text>
       ),
     }),
-    columnHelper.accessor('customerName', {
+    columnHelper.accessor('customer.name', {
       id: 'customerName',
       header: () => (
         <Text fontSize={{ sm: '10px', lg: '12px' }} color="gray.400">
@@ -301,7 +321,7 @@ const Reports = () => {
       ),
       cell: (info) => (
         <Text color={textColor} fontSize="sm">
-          {info.getValue()}
+          {info.getValue() || 'N/A'}
         </Text>
       ),
     }),
@@ -313,7 +333,7 @@ const Reports = () => {
         </Text>
       ),
       cell: (info) => (
-        <Text color={textColor} fontSize="sm">
+        <Text color={textColor} fontSize="sm" fontWeight="600">
           ${info.getValue()}
         </Text>
       ),
@@ -325,16 +345,24 @@ const Reports = () => {
           Status
         </Text>
       ),
-      cell: (info) => (
-        <Text 
-          color={info.getValue() === 'Completed' ? 'green.500' : 
-                info.getValue() === 'Pending' ? 'orange.500' : 
-                info.getValue() === 'Processing' ? 'blue.500' : 'red.500'} 
-          fontSize="sm"
-        >
-          {info.getValue()}
-        </Text>
-      ),
+      cell: (info) => {
+        const status = info.getValue();
+        let colorScheme;
+        
+        switch(status) {
+          case 'COMPLETED': colorScheme = 'green'; break;
+          case 'PENDING': colorScheme = 'orange'; break;
+          case 'PROCESSING': colorScheme = 'blue'; break;
+          case 'CANCELLED': colorScheme = 'red'; break;
+          default: colorScheme = 'gray';
+        }
+        
+        return (
+          <Badge colorScheme={colorScheme} fontSize="sm">
+            {status}
+          </Badge>
+        );
+      },
     }),
     columnHelper.accessor('createdAt', {
       id: 'createdAt',
@@ -345,7 +373,7 @@ const Reports = () => {
       ),
       cell: (info) => (
         <Text color={textColor} fontSize="sm">
-          {info.getValue()}
+          {new Date(info.getValue()).toLocaleDateString()}
         </Text>
       ),
     }),
@@ -370,8 +398,43 @@ const Reports = () => {
     getSortedRowModel: getSortedRowModel(),
   });
 
+  // Show error if no pharmacy ID
+  if (!pharmacyId) {
+    return (
+      <Box className="container" display="flex" justifyContent="center" alignItems="center" minH="400px" flexDirection="column">
+        <Text color="red.500" fontSize="lg" mb={4}>
+          Pharmacy information not found. Please select a pharmacy first.
+        </Text>
+        <Button colorScheme="blue" onClick={() => navigate('/admin/pharmacies')}>
+          Go to Pharmacies
+        </Button>
+      </Box>
+    );
+  }
+
+  // Show loading state
+  if (isLoading) {
+    return (
+      <Box className="container" display="flex" justifyContent="center" alignItems="center" minH="400px">
+        <Spinner size="xl" thickness="4px" speed="0.65s" color="blue.500" />
+      </Box>
+    );
+  }
+
+  // Show error state
+  if (error) {
+    return (
+      <Box className="container" display="flex" justifyContent="center" alignItems="center" minH="400px" flexDirection="column">
+        <Text color="red.500" fontSize="lg" mb={4}>
+          Error loading pharmacy report: {error.message || 'Unknown error'}
+        </Text>
+        <Button colorScheme="blue" onClick={refetch}>Retry</Button>
+      </Box>
+    );
+  }
+
   return (
-    <Box className="container" >
+    <Box className="container">
       <Card
         flexDirection="column"
         w="100%"
@@ -385,7 +448,7 @@ const Reports = () => {
             fontWeight="700"
             lineHeight="100%"
           >
-            Reports
+            {pharmacyName} Analytics Report
           </Text>
           <IconButton
             aria-label="Download All Reports"
@@ -396,10 +459,47 @@ const Reports = () => {
           />
         </Flex>
 
+        {/* Summary Stats */}
+        <Grid templateColumns={{ base: 'repeat(1, 1fr)', md: 'repeat(3, 1fr)' }} gap={6} px="25px" mb="25px">
+          <GridItem>
+            <Card p={4}>
+              <Stat>
+                <StatLabel>Total Orders</StatLabel>
+                <StatNumber>{orderStats.totalOrders || 0}</StatNumber>
+                <StatHelpText>
+                  {orderStats.completedOrders || 0} Completed
+                </StatHelpText>
+              </Stat>
+            </Card>
+          </GridItem>
+          <GridItem>
+            <Card p={4}>
+              <Stat>
+                <StatLabel>Total Revenue</StatLabel>
+                <StatNumber>${orderStats.totalRevenue || 0}</StatNumber>
+                <StatHelpText>
+                  Avg Order: ${orderStats.averageOrderValue || 0}
+                </StatHelpText>
+              </Stat>
+            </Card>
+          </GridItem>
+          <GridItem>
+            <Card p={4}>
+              <Stat>
+                <StatLabel>Inventory Status</StatLabel>
+                <StatNumber>{inventoryStats.lowStockCount || 0} Low Stock</StatNumber>
+                <StatHelpText>
+                  {inventoryStats.highStockCount || 0} Well Stocked
+                </StatHelpText>
+              </Stat>
+            </Card>
+          </GridItem>
+        </Grid>
+
         <Tabs variant="soft-rounded" my={"20px"} colorScheme="brand" onChange={(index) => setActiveTab(index)}>
           <TabList px="25px">
-            <Tab>Inventory</Tab>
-            <Tab>Orders</Tab>
+            <Tab>Low Stock Inventory ({lowStockProducts.length})</Tab>
+            <Tab>Recent Orders ({recentOrders.length})</Tab>
           </TabList>
 
           <Flex px="25px" my="20px">
@@ -421,141 +521,157 @@ const Reports = () => {
 
           <TabPanels>
             <TabPanel>
-              <Table variant="simple" color="gray.500" mb="24px" mt="12px">
-                <Thead>
-                  {table.getHeaderGroups().map((headerGroup) => (
-                    <Tr key={headerGroup.id}>
-                      {headerGroup.headers.map((header) => {
-                        return (
-                          <Th
-                            key={header.id}
-                            colSpan={header.colSpan}
-                            pe="10px"
-                            borderColor={borderColor}
-                            cursor="pointer"
-                            onClick={header.column.getToggleSortingHandler()}
-                          >
-                            <Flex
-                              justifyContent="space-between"
-                              align="center"
-                              fontSize={{ sm: '10px', lg: '12px' }}
-                              color="gray.400"
+              {lowStockProducts.length === 0 ? (
+                <Text textAlign="center" py={10} color="gray.500">
+                  No low stock products found
+                </Text>
+              ) : (
+                <>
+                  <Table variant="simple" color="gray.500" mb="24px" mt="12px">
+                    <Thead>
+                      {table.getHeaderGroups().map((headerGroup) => (
+                        <Tr key={headerGroup.id}>
+                          {headerGroup.headers.map((header) => {
+                            return (
+                              <Th
+                                key={header.id}
+                                colSpan={header.colSpan}
+                                pe="10px"
+                                borderColor={borderColor}
+                                cursor="pointer"
+                                onClick={header.column.getToggleSortingHandler()}
+                              >
+                                <Flex
+                                  justifyContent="space-between"
+                                  align="center"
+                                  fontSize={{ sm: '10px', lg: '12px' }}
+                                  color="gray.400"
+                                >
+                                  {flexRender(
+                                    header.column.columnDef.header,
+                                    header.getContext(),
+                                  )}
+                                  {{
+                                    asc: ' 🔼',
+                                    desc: ' 🔽',
+                                  }[header.column.getIsSorted()] ?? null}
+                                </Flex>
+                              </Th>
+                            );
+                          })}
+                        </Tr>
+                      ))}
+                    </Thead>
+                    <Tbody>
+                      {table.getRowModel().rows.map((row) => (
+                        <Tr key={row.id}>
+                          {row.getVisibleCells().map((cell) => (
+                            <Td
+                              key={cell.id}
+                              fontSize={{ sm: '14px' }}
+                              minW={{ sm: '150px', md: '200px', lg: 'auto' }}
+                              borderColor="transparent"
                             >
                               {flexRender(
-                                header.column.columnDef.header,
-                                header.getContext(),
+                                cell.column.columnDef.cell,
+                                cell.getContext(),
                               )}
-                              {{
-                                asc: ' 🔼',
-                                desc: ' 🔽',
-                              }[header.column.getIsSorted()] ?? null}
-                            </Flex>
-                          </Th>
-                        );
-                      })}
-                    </Tr>
-                  ))}
-                </Thead>
-                <Tbody>
-                  {table.getRowModel().rows.map((row) => (
-                    <Tr key={row.id}>
-                      {row.getVisibleCells().map((cell) => (
-                        <Td
-                          key={cell.id}
-                          fontSize={{ sm: '14px' }}
-                          minW={{ sm: '150px', md: '200px', lg: 'auto' }}
-                          borderColor="transparent"
-                        >
-                          {flexRender(
-                            cell.column.columnDef.cell,
-                            cell.getContext(),
-                          )}
-                        </Td>
+                            </Td>
+                          ))}
+                        </Tr>
                       ))}
-                    </Tr>
-                  ))}
-                </Tbody>
-              </Table>
+                    </Tbody>
+                  </Table>
 
-              {/* Pagination for Inventory tab */}
-              {inventoryData?.data?.pagination?.totalPages > 1 && (
-                <Flex justifyContent="center" mt={4} pb={4}>
-                  <Pagination
-                    currentPage={inventoryPage}
-                    totalPages={inventoryData.data.pagination.totalPages}
-                    onPageChange={setInventoryPage}
-                  />
-                </Flex>
+                  {/* Pagination for Inventory tab */}
+                  {lowStockProducts.length > inventoryLimit && (
+                    <Flex justifyContent="center" mt={4} pb={4}>
+                      <Pagination
+                        currentPage={inventoryPage}
+                        totalPages={Math.ceil(lowStockProducts.length / inventoryLimit)}
+                        onPageChange={setInventoryPage}
+                      />
+                    </Flex>
+                  )}
+                </>
               )}
-                         </TabPanel>
-             <TabPanel>
-               <Table variant="simple" color="gray.500" mb="24px" mt="12px">
-                 <Thead>
-                   {table.getHeaderGroups().map((headerGroup) => (
-                     <Tr key={headerGroup.id}>
-                       {headerGroup.headers.map((header) => {
-                         return (
-                           <Th
-                             key={header.id}
-                             colSpan={header.colSpan}
-                             pe="10px"
-                             borderColor={borderColor}
-                             cursor="pointer"
-                             onClick={header.column.getToggleSortingHandler()}
-                           >
-                             <Flex
-                               justifyContent="space-between"
-                               align="center"
-                               fontSize={{ sm: '10px', lg: '12px' }}
-                               color="gray.400"
-                             >
-                               {flexRender(
-                                 header.column.columnDef.header,
-                                 header.getContext(),
-                               )}
-                               {{
-                                 asc: ' 🔼',
-                                 desc: ' 🔽',
-                               }[header.column.getIsSorted()] ?? null}
-                             </Flex>
-                           </Th>
-                         );
-                       })}
-                     </Tr>
-                   ))}
-                 </Thead>
-                 <Tbody>
-                   {table.getRowModel().rows.map((row) => (
-                     <Tr key={row.id}>
-                       {row.getVisibleCells().map((cell) => (
-                         <Td
-                           key={cell.id}
-                           fontSize={{ sm: '14px' }}
-                           minW={{ sm: '150px', md: '200px', lg: 'auto' }}
-                           borderColor="transparent"
-                         >
-                           {flexRender(
-                             cell.column.columnDef.cell,
-                             cell.getContext(),
-                           )}
-                         </Td>
-                       ))}
-                     </Tr>
-                   ))}
-                 </Tbody>
-               </Table>
+            </TabPanel>
+            <TabPanel>
+              {recentOrders.length === 0 ? (
+                <Text textAlign="center" py={10} color="gray.500">
+                  No recent orders found
+                </Text>
+              ) : (
+                <>
+                  <Table variant="simple" color="gray.500" mb="24px" mt="12px">
+                    <Thead>
+                      {table.getHeaderGroups().map((headerGroup) => (
+                        <Tr key={headerGroup.id}>
+                          {headerGroup.headers.map((header) => {
+                            return (
+                              <Th
+                                key={header.id}
+                                colSpan={header.colSpan}
+                                pe="10px"
+                                borderColor={borderColor}
+                                cursor="pointer"
+                                onClick={header.column.getToggleSortingHandler()}
+                              >
+                                <Flex
+                                  justifyContent="space-between"
+                                  align="center"
+                                  fontSize={{ sm: '10px', lg: '12px' }}
+                                  color="gray.400"
+                                >
+                                  {flexRender(
+                                    header.column.columnDef.header,
+                                    header.getContext(),
+                                  )}
+                                  {{
+                                    asc: ' 🔼',
+                                    desc: ' 🔽',
+                                  }[header.column.getIsSorted()] ?? null}
+                                </Flex>
+                              </Th>
+                            );
+                          })}
+                        </Tr>
+                      ))}
+                    </Thead>
+                    <Tbody>
+                      {table.getRowModel().rows.map((row) => (
+                        <Tr key={row.id}>
+                          {row.getVisibleCells().map((cell) => (
+                            <Td
+                              key={cell.id}
+                              fontSize={{ sm: '14px' }}
+                              minW={{ sm: '150px', md: '200px', lg: 'auto' }}
+                              borderColor="transparent"
+                            >
+                              {flexRender(
+                                cell.column.columnDef.cell,
+                                cell.getContext(),
+                              )}
+                            </Td>
+                          ))}
+                        </Tr>
+                      ))}
+                    </Tbody>
+                  </Table>
 
-               {/* Pagination for Orders tab */}
-               {ordersData?.data?.pagination?.totalPages > 1 && (
-                 <Flex justifyContent="center" mt={4} pb={4}>
-                   <Pagination
-                     currentPage={ordersPage}
-                     totalPages={ordersData.data.pagination.totalPages}
-                     onPageChange={setOrdersPage}
-                   />
-                 </Flex>
-               )}
-             </TabPanel>
+                  {/* Pagination for Orders tab */}
+                  {recentOrders.length > ordersLimit && (
+                    <Flex justifyContent="center" mt={4} pb={4}>
+                      <Pagination
+                        currentPage={ordersPage}
+                        totalPages={Math.ceil(recentOrders.length / ordersLimit)}
+                        onPageChange={setOrdersPage}
+                      />
+                    </Flex>
+                  )}
+                </>
+              )}
+            </TabPanel>
           </TabPanels>
         </Tabs>
       </Card>

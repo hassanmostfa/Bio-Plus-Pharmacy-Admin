@@ -66,6 +66,10 @@ export const pharmacyApi = createApi({
     getLowStockProducts: builder.query({
       query: (pharmacyId) => `/admin/pharmacy-analytics/low-stock-products/${pharmacyId}`,
     }),
+    // Add the new pharmacy report endpoint
+    getPharmacyReport: builder.query({
+      query: (pharmacyId) => `/admin/pharmacy-analytics/pharmacy-report/${pharmacyId}`,
+    }),
   }),
 });
 
@@ -79,4 +83,5 @@ export const {
   useGetStatsQuery,
   useGetHighestSellingProductsQuery,
   useGetLowStockProductsQuery,
+  useGetPharmacyReportQuery, // Export the new hook
 } = pharmacyApi;

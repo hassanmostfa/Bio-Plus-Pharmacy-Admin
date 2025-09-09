@@ -686,6 +686,97 @@ const Orders = () => {
             )}
           </ModalBody>
           <ModalFooter>
+            <Button
+              variant="darkBrand"
+              color="white"
+              fontSize="sm"
+              fontWeight="500"
+              borderRadius="70px"
+              px="24px"
+              py="5px"
+              mr="10px"
+              onClick={() => {
+                const printWindow = window.open('', '', 'width=800,height=600');
+                printWindow.document.write('<html><head><title>Order Details - ' + selectedOrder.orderNumber + '</title></head><body>');
+                printWindow.document.write('<h1>Order Details</h1>');
+                printWindow.document.write('<table border="1" style="width:100%; border-collapse: collapse; margin-bottom: 20px;">');
+                printWindow.document.write(`
+                  <tr>
+                    <th style="padding: 8px; background-color: #f0f0f0;">Order Number</th>
+                    <td style="padding: 8px;">${selectedOrder.orderNumber}</td>
+                  </tr>
+                  <tr>
+                    <th style="padding: 8px; background-color: #f0f0f0;">Date</th>
+                    <td style="padding: 8px;">${formatDate(selectedOrder.createdAt)}</td>
+                  </tr>
+                  <tr>
+                    <th style="padding: 8px; background-color: #f0f0f0;">Status</th>
+                    <td style="padding: 8px;">${selectedOrder.status}</td>
+                  </tr>
+                  <tr>
+                    <th style="padding: 8px; background-color: #f0f0f0;">Customer</th>
+                    <td style="padding: 8px;">${selectedOrder.user?.name || 'N/A'}</td>
+                  </tr>
+                  <tr>
+                    <th style="padding: 8px; background-color: #f0f0f0;">Phone</th>
+                    <td style="padding: 8px;">${selectedOrder.user?.phoneNumber || 'N/A'}</td>
+                  </tr>
+                  <tr>
+                    <th style="padding: 8px; background-color: #f0f0f0;">Pharmacy</th>
+                    <td style="padding: 8px;">${selectedOrder.pharmacy?.name || 'N/A'}</td>
+                  </tr>
+                  <tr>
+                    <th style="padding: 8px; background-color: #f0f0f0;">Payment Method</th>
+                    <td style="padding: 8px;">${selectedOrder.paymentMethod}</td>
+                  </tr>
+                  <tr>
+                    <th style="padding: 8px; background-color: #f0f0f0;">Payment Status</th>
+                    <td style="padding: 8px;">${selectedOrder.paymentStatus}</td>
+                  </tr>
+                `);
+                printWindow.document.write('</table>');
+                
+                if (selectedOrder.address) {
+                  printWindow.document.write('<h3>Delivery Address</h3>');
+                  printWindow.document.write('<p>' + selectedOrder.address.buildingNo + ' ' + selectedOrder.address.street + ', ' + selectedOrder.address.city + '</p>');
+                }
+                
+                printWindow.document.write('<h3>Order Items</h3>');
+                printWindow.document.write('<table border="1" style="width:100%; border-collapse: collapse;">');
+                printWindow.document.write(`
+                  <tr style="background-color: #f0f0f0;">
+                    <th style="padding: 8px;">Item</th>
+                    <th style="padding: 8px;">Quantity</th>
+                    <th style="padding: 8px;">Price</th>
+                    <th style="padding: 8px;">Subtotal</th>
+                  </tr>
+                `);
+                
+                selectedOrder.items?.forEach((item) => {
+                  printWindow.document.write(`
+                    <tr>
+                      <td style="padding: 8px;">${item.name}</td>
+                      <td style="padding: 8px;">${item.quantity}</td>
+                      <td style="padding: 8px;">kwd ${item.price}</td>
+                      <td style="padding: 8px;">kwd ${item.subtotal}</td>
+                    </tr>
+                  `);
+                });
+                
+                printWindow.document.write('</table>');
+                printWindow.document.write('<div style="margin-top: 20px; text-align: right;">');
+                printWindow.document.write('<p><strong>Subtotal: kwd ' + selectedOrder.subtotal + '</strong></p>');
+                printWindow.document.write('<p><strong>Delivery Fee: kwd ' + selectedOrder.deliveryFee + '</strong></p>');
+                printWindow.document.write('<p style="font-size: 18px;"><strong>Total: kwd ' + selectedOrder.total + '</strong></p>');
+                printWindow.document.write('</div>');
+                printWindow.document.write('</body></html>');
+                printWindow.document.close();
+                printWindow.print();
+              }}
+              leftIcon={<IoMdPrint />}
+            >
+              {t('orders.print')}
+            </Button>
             <Button onClick={onClose}>{t('orders.close')}</Button>
           </ModalFooter>
         </ModalContent>
