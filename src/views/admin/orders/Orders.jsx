@@ -40,7 +40,7 @@ import Card from 'components/card/Card';
 import { FaEye, FaFilePdf, FaFileExcel } from 'react-icons/fa';
 import { IoMdPrint } from 'react-icons/io';
 import { useNavigate } from 'react-router-dom';
-import { useGetOrdersQuery } from 'api/orderSlice';
+import { useGetOrdersQuery, useUpdateOrderStatusMutation } from 'api/orderSlice';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
@@ -77,6 +77,9 @@ const Orders = () => {
     pharmacyId: JSON.parse(localStorage.getItem('pharmacy')).id,
     ...filters
   });
+
+  // Update order status mutation
+  const [updateOrderStatus, { isLoading: isUpdatingStatus }] = useUpdateOrderStatusMutation();
 
   const orders = ordersResponse?.data || [];
   const totalItems = ordersResponse?.pagination?.totalItems || 0;
@@ -115,6 +118,40 @@ const Orders = () => {
       endDate: '',
     });
     setPagination(prev => ({ ...prev, page: 1 }));
+  };
+
+  // Handle status update
+  const handleStatusUpdate = async (orderId, newStatus) => {
+    try {
+      await updateOrderStatus({
+        orderId: orderId,
+        status: newStatus
+      }).unwrap();
+      
+      // Refresh the orders list
+      refetch();
+      
+      // Update the selected order in the modal if it's the same order
+      if (selectedOrder && selectedOrder.id === orderId) {
+        setSelectedOrder(prev => ({ ...prev, status: newStatus }));
+      }
+      
+      toast({
+        title: t('orders.statusUpdated'),
+        description: t('orders.statusUpdatedMsg'),
+        status: "success",
+        duration: 3000,
+        isClosable: true,
+      });
+    } catch (error) {
+      toast({
+        title: t('orders.error'),
+        description: error.data?.message || t('orders.statusUpdateFail'),
+        status: "error",
+        duration: 5000,
+        isClosable: true,
+      });
+    }
   };
 
   // Handle checkbox change
@@ -285,7 +322,9 @@ const Orders = () => {
         <Badge
           colorScheme={
             info.getValue() === 'PENDING' ? 'yellow' :
-            info.getValue() === 'COMPLETED' ? 'green' : 'red'
+            info.getValue() === 'PROCESSING' ? 'blue' :
+            info.getValue() === 'SHIPPED' ? 'purple' :
+            info.getValue() === 'DELIVERED' ? 'green' : 'red'
           }
           px="10px"
           py="2px"
@@ -315,18 +354,39 @@ const Orders = () => {
     columnHelper.accessor('actions', {
       header: t('orders.actions'),
       cell: (info) => (
-        <Icon
-          w="18px"
-          h="18px"
-          me="10px"
-          color="blue.500"
-          as={FaEye}
-          cursor="pointer"
-          onClick={() => {
-            setSelectedOrder(info.row.original);
-            onOpen();
-          }}
-        />
+        <Flex align="center" gap="10px">
+          <Icon
+            w="18px"
+            h="18px"
+            color="blue.500"
+            as={FaEye}
+            cursor="pointer"
+            onClick={() => {
+              setSelectedOrder(info.row.original);
+              onOpen();
+            }}
+          />
+          <Select
+            size="xs"
+            value=""
+            onChange={(e) => {
+              if (e.target.value) {
+                handleStatusUpdate(info.row.original.id, e.target.value);
+                e.target.value = ""; // Reset to default after selection
+              }
+            }}
+            isDisabled={isUpdatingStatus}
+            width="120px"
+            fontSize="xs"
+            placeholder="Update Status"
+            _placeholder={{ color: "gray.500", fontSize: "xs" }}
+          >
+            <option value="PENDING">PENDING</option>
+            <option value="PROCESSING">PROCESSING</option>
+            <option value="SHIPPED">SHIPPED</option>
+            <option value="DELIVERED">DELIVERED</option>
+          </Select>
+        </Flex>
       ),
     }),
   ];
@@ -602,17 +662,33 @@ const Orders = () => {
                   </Box>
                   <Box>
                     <Text fontSize="sm" color="gray.500">{t('orders.status')}</Text>
-                    <Badge
-                      colorScheme={
-                        selectedOrder.status === 'PENDING' ? 'yellow' :
-                        selectedOrder.status === 'COMPLETED' ? 'green' : 'red'
-                      }
-                      px="10px"
-                      py="2px"
-                      borderRadius="8px"
-                    >
-                      {selectedOrder.status}
-                    </Badge>
+                    <Flex align="center" gap="10px">
+                      <Badge
+                        colorScheme={
+                          selectedOrder.status === 'PENDING' ? 'yellow' :
+                          selectedOrder.status === 'PROCESSING' ? 'blue' :
+                          selectedOrder.status === 'SHIPPED' ? 'purple' :
+                          selectedOrder.status === 'DELIVERED' ? 'green' : 'red'
+                        }
+                        px="10px"
+                        py="2px"
+                        borderRadius="8px"
+                      >
+                        {selectedOrder.status}
+                      </Badge>
+                      <Select
+                        size="sm"
+                        value={selectedOrder.status}
+                        onChange={(e) => handleStatusUpdate(selectedOrder.id, e.target.value)}
+                        isDisabled={isUpdatingStatus}
+                        width="150px"
+                      >
+                        <option value="PENDING">PENDING</option>
+                        <option value="PROCESSING">PROCESSING</option>
+                        <option value="SHIPPED">SHIPPED</option>
+                        <option value="DELIVERED">DELIVERED</option>
+                      </Select>
+                    </Flex>
                   </Box>
                 </Flex>
 

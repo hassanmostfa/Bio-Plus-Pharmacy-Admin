@@ -12,9 +12,17 @@ export const ProductApi = createApi({
       // Get the token from localStorage (or Redux state)
       const token = localStorage.getItem("token");
 
+      // Debug logging
+      console.log('Token from localStorage:', token);
+      console.log('Token type:', typeof token);
+      console.log('Token length:', token ? token.length : 'null');
+
       // If a token exists, add it to the headers
       if (token) {
         headers.set("Authorization", `Bearer ${token}`);
+        console.log('Authorization header set:', `Bearer ${token}`);
+      } else {
+        console.log('No token found in localStorage');
       }
 
       return headers;
@@ -58,6 +66,12 @@ export const ProductApi = createApi({
         responseHandler: (response) => response.blob(),
       }),
     }),
+    exportAllProducts: builder.query({
+      query: (pharmacyId) => ({
+        url: `/admin/products/export/all?pharmacyId=${pharmacyId}`,
+        responseHandler: (response) => response.blob(),
+      }),
+    }),
   }),
 });
 
@@ -68,6 +82,7 @@ export const {
   useUpdateProductMutation,
   useAddProductMutation,
   useDeleteProductMutation,
-  useGetBulkUploadTemplateQuery
+  useGetBulkUploadTemplateQuery,
+  useExportAllProductsQuery
 } = ProductApi;
 

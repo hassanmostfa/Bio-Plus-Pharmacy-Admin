@@ -36,10 +36,9 @@ import { FaEye, FaTrash, FaFileExport, FaFileImport, FaDownload, FaUpload } from
 import { EditIcon, PlusSquareIcon, ChevronDownIcon } from "@chakra-ui/icons";
 import {FaSearch} from 'react-icons/fa';
 import { useNavigate } from "react-router-dom";
-import { useGetProductsQuery, useDeleteProductMutation, useUpdateProductMutation, useGetBulkUploadTemplateQuery } from "api/productSlice";
+import { useGetProductsQuery, useDeleteProductMutation, useUpdateProductMutation, useGetBulkUploadTemplateQuery, useExportAllProductsQuery } from "api/productSlice";
 import Swal from "sweetalert2";
 import Pagination from "theme/components/Pagination";
-import * as XLSX from 'xlsx';
 import { useTranslation } from "react-i18next";
 import i18n from "../../../i18n";
 
@@ -50,6 +49,7 @@ const Products = () => {
   const [limit, setLimit] = useState(10);
   const [searchTerm, setSearchTerm] = useState('');
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
+  const [shouldExport, setShouldExport] = useState(false);
   
   // Debounce search term to avoid too many API calls
   useEffect(() => {
@@ -76,6 +76,12 @@ const Products = () => {
 
   // Bulk upload template hook
   const { data: templateBlob, isLoading: isTemplateLoading } = useGetBulkUploadTemplateQuery();
+  
+  // Export products hook
+  const { data: exportBlob, isLoading: isExportLoading, error: exportError } = useExportAllProductsQuery(
+    JSON.parse(localStorage.getItem('pharmacy')).id,
+    { skip: !shouldExport }
+  );
 
   const textColor = useColorModeValue("secondaryGray.900", "white");
   const borderColor = useColorModeValue("gray.200", "whiteAlpha.100");
@@ -95,6 +101,44 @@ const Products = () => {
       refetch();
     }
   }, [refetch, isLoading]);
+
+  // Handle export download when blob is received
+  React.useEffect(() => {
+    if (exportBlob && shouldExport) {
+      const url = window.URL.createObjectURL(exportBlob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `products-export-${new Date().toISOString().split('T')[0]}.xlsx`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+      
+      toast({
+        title: t('products.exportSuccess'),
+        description: t('products.exportMsg'),
+        status: "success",
+        duration: 3000,
+        isClosable: true,
+      });
+      
+      setShouldExport(false); // Reset the export trigger
+    }
+  }, [exportBlob, shouldExport, toast, t]);
+
+  // Handle export error
+  React.useEffect(() => {
+    if (exportError && shouldExport) {
+      toast({
+        title: t('products.error'),
+        description: exportError.data?.message || t('products.exportFail'),
+        status: "error",
+        duration: 5000,
+        isClosable: true,
+      });
+      setShouldExport(false); // Reset the export trigger
+    }
+  }, [exportError, shouldExport, toast, t]);
 
   const toggleStatus = async (productId, currentStatus) => {
     try {
@@ -180,29 +224,9 @@ const Products = () => {
     });
   };
 
-  // Export to Excel function
+  // Export to Excel function - triggers API call
   const exportToExcel = () => {
-    const data = products.map(product => ({
-      Name: product.name,
-      Category: product.categoryName,
-      Price: product.price,
-      Stock: product.quantity,
-      Status: product.isActive ? 'Active' : 'Inactive',
-      Published: product.isPublished ? 'Yes' : 'No'
-    }));
-
-    const worksheet = XLSX.utils.json_to_sheet(data);
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, "Products");
-    XLSX.writeFile(workbook, "Products.xlsx");
-    
-    toast({
-      title: t('products.exportSuccess'),
-      description: t('products.exportMsg'),
-      status: "success",
-      duration: 3000,
-      isClosable: true,
-    });
+    setShouldExport(true);
   };
 
   // Import from Excel function
@@ -210,25 +234,18 @@ const Products = () => {
     const file = e.target.files[0];
     if (!file) return;
 
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const data = new Uint8Array(e.target.result);
-      const workbook = XLSX.read(data, { type: 'array' });
-      const worksheet = workbook.Sheets[workbook.SheetNames[0]];
-      const jsonData = XLSX.utils.sheet_to_json(worksheet);
-      
-      // Here you would typically send the data to your API
-      console.log("Imported data:", jsonData);
-      
-      toast({
-        title: t('products.importSuccess'),
-        description: t('products.importMsg', { count: jsonData.length }),
-        status: "success",
-        duration: 3000,
-        isClosable: true,
-      });
-    };
-    reader.readAsArrayBuffer(file);
+    // For now, just show a message that import functionality needs to be implemented
+    // You can implement the actual import logic later with a proper API endpoint
+    toast({
+      title: t('products.importInfo'),
+      description: t('products.importNotImplemented'),
+      status: "info",
+      duration: 3000,
+      isClosable: true,
+    });
+    
+    // Reset the file input
+    e.target.value = '';
   };
 
   // Download template function
@@ -390,8 +407,12 @@ const Products = () => {
                 {t('products.export')}
               </MenuButton>
               <MenuList>
-                <MenuItem icon={<FaDownload />} onClick={exportToExcel}>
-                  {t('products.exportExcel')}
+                <MenuItem 
+                  icon={<FaDownload />} 
+                  onClick={exportToExcel}
+                  isDisabled={isExportLoading}
+                >
+                  {isExportLoading ? t('products.exporting') : t('products.exportExcel')}
                 </MenuItem>
               </MenuList>
             </Menu>
