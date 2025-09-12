@@ -274,7 +274,7 @@ const Reports = () => {
       ),
       cell: (info) => (
         <Text color={textColor} fontSize="sm">
-          ${info.getValue()}
+          kwd{info.getValue()}
         </Text>
       ),
     }),
@@ -334,7 +334,7 @@ const Reports = () => {
       ),
       cell: (info) => (
         <Text color={textColor} fontSize="sm" fontWeight="600">
-          ${info.getValue()}
+          kwd {info.getValue()}
         </Text>
       ),
     }),
@@ -475,10 +475,10 @@ const Reports = () => {
           <GridItem>
             <Card p={4}>
               <Stat>
-                <StatLabel>Total Revenue</StatLabel>
-                <StatNumber>${orderStats.totalRevenue || 0}</StatNumber>
+                <StatLabel> Total Revenue</StatLabel>
+                <StatNumber> {orderStats.totalRevenue || 0} kwd</StatNumber>
                 <StatHelpText>
-                  Avg Order: ${orderStats.averageOrderValue || 0}
+                  Avg Order:  {orderStats.averageOrderValue || 0} kwd
                 </StatHelpText>
               </Stat>
             </Card>
@@ -502,7 +502,7 @@ const Reports = () => {
             <Tab>Recent Orders ({recentOrders.length})</Tab>
           </TabList>
 
-          <Flex px="25px" my="20px">
+          {/* <Flex px="25px" my="20px">
             <InputGroup maxW="400px">
               <InputLeftElement pointerEvents="none">
                 <SearchIcon color="gray.300" />
@@ -517,7 +517,7 @@ const Reports = () => {
                 pr="30px"
               />
             </InputGroup>
-          </Flex>
+          </Flex> */}
 
           <TabPanels>
             <TabPanel>

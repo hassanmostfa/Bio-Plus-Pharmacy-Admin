@@ -85,6 +85,14 @@ const Orders = () => {
   const totalItems = ordersResponse?.pagination?.totalItems || 0;
   const totalPages = ordersResponse?.pagination?.totalPages || 1;
 
+    // Trigger refetch when component mounts (navigates to)
+    React.useEffect(() => {
+      if (!isLoading) {
+        refetch();
+      }
+    }, [refetch, isLoading]);
+
+    
   // Format date for display
   const formatDate = (dateString) => {
     return dateString ? new Date(dateString).toLocaleDateString('en-US', {
